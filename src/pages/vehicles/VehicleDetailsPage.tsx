@@ -176,7 +176,43 @@ const VehicleDetailsPage = () => {
       
       if (error) throw error
       
-      await addHistoryEvent(vehicle.id, "Vehicle details updated")
+      try {
+        await addHistoryEvent(vehicle.id, "Vehicle details updated")
+        
+        // Fetch the updated vehicle data to update our local state
+        const { data: updatedVehicle, error: fetchError } = await supabase
+          .from('vehicles')
+          .select(`
+            id,
+            vin,
+            lot_number,
+            stock_number,
+            year,
+            destination,
+            client_name,
+            client_phone_number,
+            client_passport_number,
+            address,
+            city,
+            state,
+            zip_code,
+            receiver_port_id,
+            warehouse_id,
+            gate_pass_pin,
+            is_sublot,
+            manufacturer:manufacturer_id(name),
+            model:model_id(name)
+          `)
+          .eq('id', vehicle.id)
+          .single()
+          
+        if (fetchError) throw fetchError
+          
+        // Update the vehicle state with fresh data
+        setVehicle(updatedVehicle)
+      } catch (historyError) {
+        console.error('Error updating history:', historyError)
+      }
       
       toast({
         title: "Success",

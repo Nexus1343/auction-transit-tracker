@@ -11,12 +11,12 @@ interface VehicleHeaderProps {
   getProgressPercentage: () => number
 }
 
-export const VehicleHeader = ({ 
-  vehicle, 
-  currentStatus, 
-  statuses, 
+export const VehicleHeader = ({
+  vehicle,
+  currentStatus,
+  statuses,
   updateStatus,
-  getProgressPercentage 
+  getProgressPercentage
 }: VehicleHeaderProps) => {
   const navigate = useNavigate()
 
@@ -64,7 +64,7 @@ export const VehicleHeader = ({
                 
                 return (
                   <div 
-                    key={status}
+                    key={`status-${index}`}
                     className="flex flex-col items-center relative group"
                     style={{ width: `${100 / statuses.length}%` }}
                   >
