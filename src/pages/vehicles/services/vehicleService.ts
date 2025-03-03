@@ -105,10 +105,14 @@ export const saveVehicleDetails = async (
   }
 
   // Combine all data for state update
-  const combinedData = {
+  const combinedData: VehicleDetails = {
     ...updatedVehicle,
     ...(landTransportData || {}),
-    ...(seaTransportData || {})
+    ...(seaTransportData || {}),
+    // Preserve the manufacturer and model data from the original vehicle object
+    // since they might not be returned by the update operations
+    manufacturer: vehicle.manufacturer,
+    model: vehicle.model
   };
 
   // Update the vehicle state with the new data
