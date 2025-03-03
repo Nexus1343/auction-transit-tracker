@@ -37,13 +37,13 @@ export const useAuctionClosing = (
     'auction_won_price',
     'auction_final_price',
     'auction_pay_date'
-  ];
+  ] as const; // This makes the array readonly and allows TypeScript to narrow the type
 
   // Check if any auction fields have data
   const hasAuctionData = () => {
     const values = form.getValues();
     return auctionFields.some(field => {
-      const value = values[field as keyof VehicleFormValues];
+      const value = values[field];
       if (typeof value === 'string') return value.trim() !== '';
       if (typeof value === 'number') return value !== 0;
       if (typeof value === 'boolean') return value === true;
@@ -69,14 +69,15 @@ export const useAuctionClosing = (
     const defaultValues: Partial<VehicleFormValues> = {};
     
     auctionFields.forEach(field => {
-      const fieldKey = field as keyof VehicleFormValues;
-      
       if (['auction_id', 'receiver_port_id', 'warehouse_id', 'auction_won_price', 'auction_final_price'].includes(field)) {
-        defaultValues[fieldKey] = 0;
+        // For numeric fields
+        defaultValues[field] = 0;
       } else if (field === 'is_sublot') {
-        defaultValues[fieldKey] = false;
+        // For boolean fields
+        defaultValues[field] = false;
       } else {
-        defaultValues[fieldKey] = '';
+        // For string fields
+        defaultValues[field] = '';
       }
     });
 
