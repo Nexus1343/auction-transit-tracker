@@ -1,4 +1,4 @@
-<lov-code>
+
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
@@ -245,13 +245,15 @@ const VehicleDetailsPage = () => {
       if (error) throw error
       
       try {
-        await supabase
+        const insertResult = await supabase
           .from('vehicle_status_history')
           .insert({
             vehicle_id: vehicle.id,
             notes: "Vehicle details updated",
             created_at: new Date().toISOString()
           })
+        
+        if (insertResult.error) throw insertResult.error
         
         const { data: historyData, error: historyError } = await supabase
           .from('vehicle_status_history')
@@ -302,7 +304,7 @@ const VehicleDetailsPage = () => {
     setCurrentStatus(newStatus)
     
     try {
-      const { error } = await supabase
+      const insertResult = await supabase
         .from('vehicle_status_history')
         .insert({
           vehicle_id: vehicle.id,
@@ -310,7 +312,7 @@ const VehicleDetailsPage = () => {
           created_at: new Date().toISOString()
         })
       
-      if (error) throw error
+      if (insertResult.error) throw insertResult.error
       
       try {
         const { data: historyData, error: historyError } = await supabase
@@ -366,52 +368,50 @@ const VehicleDetailsPage = () => {
     
     if (vehicle) {
       try {
-        supabase
-          .from('vehicle_status_history')
-          .insert({
-            vehicle_id: vehicle.id,
-            notes: `Added ${section} information`,
-            created_at: new Date().toISOString()
-          })
-          .then(({ error }) => {
-            if (error) {
-              console.error('Error updating history:', error)
-              return null
-            }
-            
-            return supabase
-              .from('vehicle_status_history')
-              .select(`
-                id,
-                created_at,
-                notes,
-                status_id,
-                changed_by
-              `)
-              .eq('vehicle_id', vehicle.id)
-              .order('created_at', { ascending: false })
-          })
-          .then(result => {
-            if (!result) return
-            
-            const { data: historyData, error: historyError } = result
-            
-            if (historyError) {
-              console.error('Error refreshing history:', historyError)
-              return
-            }
-            
-            if (historyData) {
-              const formattedHistory = historyData.map(item => ({
-                date: new Date(item.created_at).toLocaleString(),
-                user: "Admin", // Replace with actual user when available
-                action: item.notes || "Status updated"
-              }))
-              setHistory(formattedHistory)
-            }
-          })
+        const addSectionProcess = async () => {
+          const insertResult = await supabase
+            .from('vehicle_status_history')
+            .insert({
+              vehicle_id: vehicle.id,
+              notes: `Added ${section} information`,
+              created_at: new Date().toISOString()
+            });
+          
+          if (insertResult.error) {
+            console.error('Error updating history:', insertResult.error);
+            return;
+          }
+          
+          const { data: historyData, error: historyError } = await supabase
+            .from('vehicle_status_history')
+            .select(`
+              id,
+              created_at,
+              notes,
+              status_id,
+              changed_by
+            `)
+            .eq('vehicle_id', vehicle.id)
+            .order('created_at', { ascending: false });
+          
+          if (historyError) {
+            console.error('Error refreshing history:', historyError);
+            return;
+          }
+          
+          if (historyData) {
+            const formattedHistory = historyData.map(item => ({
+              date: new Date(item.created_at).toLocaleString(),
+              user: "Admin", // Replace with actual user when available
+              action: item.notes || "Status updated"
+            }));
+            setHistory(formattedHistory);
+          }
+        };
+        
+        addSectionProcess();
       } catch (error) {
-        console.error('Error in promise chain:', error)
+        console.error('Error in section process:', error);
       }
     }
   }
@@ -424,52 +424,50 @@ const VehicleDetailsPage = () => {
     
     if (vehicle) {
       try {
-        supabase
-          .from('vehicle_status_history')
-          .insert({
-            vehicle_id: vehicle.id,
-            notes: `Removed ${section} information`,
-            created_at: new Date().toISOString()
-          })
-          .then(({ error }) => {
-            if (error) {
-              console.error('Error updating history:', error)
-              return null
-            }
-            
-            return supabase
-              .from('vehicle_status_history')
-              .select(`
-                id,
-                created_at,
-                notes,
-                status_id,
-                changed_by
-              `)
-              .eq('vehicle_id', vehicle.id)
-              .order('created_at', { ascending: false })
-          })
-          .then(result => {
-            if (!result) return
-            
-            const { data: historyData, error: historyError } = result
-            
-            if (historyError) {
-              console.error('Error refreshing history:', historyError)
-              return
-            }
-            
-            if (historyData) {
-              const formattedHistory = historyData.map(item => ({
-                date: new Date(item.created_at).toLocaleString(),
-                user: "Admin", // Replace with actual user when available
-                action: item.notes || "Status updated"
-              }))
-              setHistory(formattedHistory)
-            }
-          })
+        const removeSectionProcess = async () => {
+          const insertResult = await supabase
+            .from('vehicle_status_history')
+            .insert({
+              vehicle_id: vehicle.id,
+              notes: `Removed ${section} information`,
+              created_at: new Date().toISOString()
+            });
+          
+          if (insertResult.error) {
+            console.error('Error updating history:', insertResult.error);
+            return;
+          }
+          
+          const { data: historyData, error: historyError } = await supabase
+            .from('vehicle_status_history')
+            .select(`
+              id,
+              created_at,
+              notes,
+              status_id,
+              changed_by
+            `)
+            .eq('vehicle_id', vehicle.id)
+            .order('created_at', { ascending: false });
+          
+          if (historyError) {
+            console.error('Error refreshing history:', historyError);
+            return;
+          }
+          
+          if (historyData) {
+            const formattedHistory = historyData.map(item => ({
+              date: new Date(item.created_at).toLocaleString(),
+              user: "Admin", // Replace with actual user when available
+              action: item.notes || "Status updated"
+            }));
+            setHistory(formattedHistory);
+          }
+        };
+        
+        removeSectionProcess();
       } catch (error) {
-        console.error('Error in promise chain:', error)
+        console.error('Error in remove section process:', error);
       }
     }
   }
@@ -1029,4 +1027,28 @@ const VehicleDetailsPage = () => {
                       <div className="text-sm text-gray-500 mb-4">
                         Drop files here or click to upload
                       </div>
-                      <button type="button" className="bg-blue
+                      <button type="button" className="bg-blue-50 text-blue-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-100">
+                        Browse Files
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end mb-8">
+              <Button
+                type="submit"
+                disabled={isSaving}
+              >
+                {isSaving ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </div>
+    </div>
+  )
+}
+
+export default VehicleDetailsPage
