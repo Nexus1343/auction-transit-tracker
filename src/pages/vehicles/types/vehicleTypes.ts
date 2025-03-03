@@ -1,4 +1,3 @@
-
 export interface VehicleDetails {
   id: number
   vin: string
@@ -62,6 +61,7 @@ export interface VehicleDetails {
   container_entry_date?: string
   container_open_date?: string
   green_date?: string
+  current_status_id?: number | null
 }
 
 export interface StatusHistoryEvent {

@@ -86,6 +86,7 @@ const VehiclesPage = () => {
         current_status: vehicle.status_types?.name || 'Unknown'
       }))
       
+      console.log("Fetched vehicles:", transformedData)
       setVehicles(transformedData)
     } catch (error) {
       console.error('Error fetching vehicles:', error)
@@ -120,9 +121,15 @@ const VehiclesPage = () => {
   
   // Filter vehicles based on active filters and search term
   const filteredVehicles = vehicles.filter(vehicle => {
+    // For debugging
+    console.log("Filtering vehicle:", vehicle, "Current status:", vehicle.current_status)
+    console.log("Active filters:", activeFilters)
+    
+    // Match filters: if no filters are selected or the vehicle status is in the selected filters
     const matchesFilter = activeFilters.length === 0 || 
       (vehicle.current_status && activeFilters.includes(vehicle.current_status))
     
+    // Match search term
     const matchesSearch = !searchTerm || 
       (vehicle.vin && vehicle.vin.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (vehicle.lot_number && vehicle.lot_number.toLowerCase().includes(searchTerm.toLowerCase())) ||
