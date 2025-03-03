@@ -67,13 +67,16 @@ export const useAuctionClosing = (
   const handleConfirmClose = () => {
     // Reset auction fields
     const defaultValues: Partial<VehicleFormValues> = {};
+    
     auctionFields.forEach(field => {
+      const fieldKey = field as keyof VehicleFormValues;
+      
       if (['auction_id', 'receiver_port_id', 'warehouse_id', 'auction_won_price', 'auction_final_price'].includes(field)) {
-        defaultValues[field as keyof VehicleFormValues] = 0;
+        defaultValues[fieldKey] = 0;
       } else if (field === 'is_sublot') {
-        defaultValues[field as keyof VehicleFormValues] = false;
+        defaultValues[fieldKey] = false;
       } else {
-        defaultValues[field as keyof VehicleFormValues] = '';
+        defaultValues[fieldKey] = '';
       }
     });
 
