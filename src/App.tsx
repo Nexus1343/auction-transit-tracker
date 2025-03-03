@@ -4,6 +4,7 @@ import MainLayout from './components/layout/MainLayout'
 import Index from './pages/Index'
 import NotFound from './pages/NotFound'
 import VehiclesPage from './pages/vehicles/VehiclesPage'
+import VehicleDetailsPage from './pages/vehicles/VehicleDetailsPage'
 import LoginPage from './pages/auth/LoginPage'
 import RegisterPage from './pages/auth/RegisterPage'
 import { Toaster } from './components/ui/toaster'
@@ -24,6 +25,7 @@ function App() {
           <Route path="/" element={<MainLayout />}>
             <Route index element={<Index />} />
             <Route path="vehicles" element={<VehiclesPage />} />
+            <Route path="vehicles/:id" element={<VehicleDetailsPage />} />
           </Route>
         </Route>
         

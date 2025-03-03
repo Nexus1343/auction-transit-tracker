@@ -6,6 +6,7 @@ import { Plus } from "lucide-react"
 import { AddVehicleModal } from "@/components/vehicles/AddVehicleModal"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
+import { useNavigate } from "react-router-dom"
 
 // Define the Vehicle type based on what we need to display
 interface Vehicle {
@@ -26,6 +27,7 @@ const VehiclesPage = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const { toast } = useToast()
+  const navigate = useNavigate()
   
   // Function to fetch vehicles
   const fetchVehicles = async () => {
@@ -63,6 +65,10 @@ const VehiclesPage = () => {
     fetchVehicles()
   }, [])
   
+  const handleRowClick = (vehicleId: number) => {
+    navigate(`/vehicles/${vehicleId}`)
+  }
+  
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -98,7 +104,11 @@ const VehiclesPage = () => {
                 </thead>
                 <tbody>
                   {vehicles.map((vehicle) => (
-                    <tr key={vehicle.id} className="border-b hover:bg-muted/50">
+                    <tr 
+                      key={vehicle.id} 
+                      className="border-b hover:bg-muted/50 cursor-pointer" 
+                      onClick={() => handleRowClick(vehicle.id)}
+                    >
                       <td className="py-3 px-4">{vehicle.vin}</td>
                       <td className="py-3 px-4">{vehicle.lot_number}</td>
                       <td className="py-3 px-4">{vehicle.manufacturer?.name || "Unknown"}</td>
