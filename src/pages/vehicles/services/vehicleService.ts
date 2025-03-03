@@ -10,7 +10,8 @@ export const saveVehicleDetails = async (
 ) => {
   const { addHistoryEvent } = useVehicleHistory(vehicle?.id || null)
   
-  const updateData = {
+  // Prepare vehicle data
+  const vehicleData = {
     vin: data.vin,
     lot_number: data.lot_number,
     stock_number: data.stock_number,
@@ -41,7 +42,23 @@ export const saveVehicleDetails = async (
     purchase_date: data.purchase_date || null,
     dealer_id: data.dealer_id > 0 ? data.dealer_id : null,
     sub_dealer_id: data.sub_dealer_id > 0 ? data.sub_dealer_id : null,
-    pay_due_date: data.pay_due_date || null,
+    pay_due_date: data.pay_due_date || null
+  };
+  
+  // Update the vehicle record
+  const { error: vehicleError } = await supabase
+    .from('vehicles')
+    .update(vehicleData)
+    .eq('id', vehicle.id)
+  
+  if (vehicleError) {
+    console.error('Supabase vehicle update error:', vehicleError);
+    throw vehicleError;
+  }
+  
+  // Prepare land transportation data
+  const landTransportData = {
+    vehicle_id: vehicle.id,
     storage_start_date: data.storage_start_date || null,
     pickup_date: data.pickup_date || null,
     pickup_date_status: data.pickup_date_status || null,
@@ -58,19 +75,49 @@ export const saveVehicleDetails = async (
     transporter_payment_date: data.transporter_payment_date || null
   };
   
-  const { error } = await supabase
-    .from('vehicles')
-    .update(updateData)
-    .eq('id', vehicle.id)
+  // Check if land transportation record exists
+  const { data: existingLandTransport, error: checkError } = await supabase
+    .from('land_transportation')
+    .select('id')
+    .eq('vehicle_id', vehicle.id)
+    .maybeSingle();
   
-  if (error) {
-    console.error('Supabase update error:', error);
-    throw error;
+  if (checkError) {
+    console.error('Error checking land transport data:', checkError);
+  }
+  
+  // Update or insert land transportation data
+  if (existingLandTransport) {
+    const { error: landTransportError } = await supabase
+      .from('land_transportation')
+      .update(landTransportData)
+      .eq('id', existingLandTransport.id);
+      
+    if (landTransportError) {
+      console.error('Land transportation update error:', landTransportError);
+      throw landTransportError;
+    }
+  } else {
+    // Only insert if we have some data to save
+    const hasLandTransportData = Object.values(landTransportData).some(value => 
+      value !== null && value !== '' && value !== 0);
+      
+    if (hasLandTransportData) {
+      const { error: landTransportError } = await supabase
+        .from('land_transportation')
+        .insert(landTransportData);
+        
+      if (landTransportError) {
+        console.error('Land transportation insert error:', landTransportError);
+        throw landTransportError;
+      }
+    }
   }
   
   try {
     await addHistoryEvent(vehicle.id, "Vehicle details updated")
     
+    // Fetch the updated vehicle with related data
     const { data: updatedVehicle, error: fetchError } = await supabase
       .from('vehicles')
       .select(`
@@ -106,6 +153,18 @@ export const saveVehicleDetails = async (
         auction_final_price,
         auction_pay_date,
         purchase_date,
+        manufacturer:manufacturer_id(name),
+        model:model_id(name)
+      `)
+      .eq('id', vehicle.id)
+      .single()
+      
+    if (fetchError) throw fetchError
+    
+    // Get land transportation data
+    const { data: landTransportData, error: landTransportFetchError } = await supabase
+      .from('land_transportation')
+      .select(`
         storage_start_date,
         pickup_date,
         pickup_date_status,
@@ -119,17 +178,23 @@ export const saveVehicleDetails = async (
         mc_number,
         transporter_name,
         transporter_phone,
-        transporter_payment_date,
-        manufacturer:manufacturer_id(name),
-        model:model_id(name)
+        transporter_payment_date
       `)
-      .eq('id', vehicle.id)
-      .single()
+      .eq('vehicle_id', vehicle.id)
+      .maybeSingle();
       
-    if (fetchError) throw fetchError
-      
-    setVehicle(updatedVehicle)
-    return updatedVehicle
+    if (landTransportFetchError) {
+      console.error('Error fetching updated land transport data:', landTransportFetchError);
+    }
+    
+    // Combine the data
+    const combinedData = {
+      ...updatedVehicle,
+      ...(landTransportData || {})
+    };
+    
+    setVehicle(combinedData)
+    return combinedData
   } catch (historyError) {
     console.error('Error updating history:', historyError)
     throw historyError

@@ -77,7 +77,8 @@ export const useVehicleDetails = () => {
       
       setIsLoading(true)
       try {
-        const { data, error } = await supabase
+        // First, fetch vehicle data
+        const { data: vehicleData, error: vehicleError } = await supabase
           .from('vehicles')
           .select(`
             id,
@@ -112,6 +113,18 @@ export const useVehicleDetails = () => {
             auction_final_price,
             auction_pay_date,
             purchase_date,
+            manufacturer:manufacturer_id(name),
+            model:model_id(name)
+          `)
+          .eq('id', parseInt(id))
+          .single()
+        
+        if (vehicleError) throw vehicleError
+        
+        // Next, check if there's land transportation data for this vehicle
+        const { data: landTransportData, error: landTransportError } = await supabase
+          .from('land_transportation')
+          .select(`
             storage_start_date,
             pickup_date,
             pickup_date_status,
@@ -125,63 +138,69 @@ export const useVehicleDetails = () => {
             mc_number,
             transporter_name,
             transporter_phone,
-            transporter_payment_date,
-            manufacturer:manufacturer_id(name),
-            model:model_id(name)
+            transporter_payment_date
           `)
-          .eq('id', parseInt(id))
-          .single()
+          .eq('vehicle_id', parseInt(id))
+          .maybeSingle()
         
-        if (error) throw error
+        if (landTransportError) {
+          console.error('Error fetching land transport data:', landTransportError)
+        }
         
-        setVehicle(data)
+        // Combine the data
+        const combinedData = {
+          ...vehicleData,
+          ...(landTransportData || {})
+        }
+        
+        setVehicle(combinedData)
         
         form.reset({
-          vin: data.vin || "",
-          lot_number: data.lot_number || "",
-          stock_number: data.stock_number || "",
-          year: data.year || 0,
-          destination: data.destination || "",
-          client_name: data.client_name || "",
-          client_phone_number: data.client_phone_number || "",
-          client_passport_number: data.client_passport_number || "",
-          client_buyer_id: data.client_buyer_id || "",
-          address: data.address || "",
-          city: data.city || "",
-          state: data.state || "",
-          zip_code: data.zip_code || "",
-          receiver_port_id: data.receiver_port_id || 0,
-          warehouse_id: data.warehouse_id || 0,
-          gate_pass_pin: data.gate_pass_pin || "",
-          is_sublot: data.is_sublot || false,
-          manufacturer_id: data.manufacturer_id || 0,
-          model_id: data.model_id || 0,
-          generation_id: data.generation_id || 0,
-          body_type_id: data.body_type_id || 0,
-          has_key: data.has_key || false,
-          highlights: data.highlights || "",
-          auction_id: data.auction_id || 0,
-          dealer_id: data.dealer_id || 0,
-          sub_dealer_id: data.sub_dealer_id || 0,
-          pay_due_date: data.pay_due_date || "",
-          auction_won_price: data.auction_won_price || 0,
-          auction_final_price: data.auction_final_price || 0,
-          auction_pay_date: data.auction_pay_date || "",
-          purchase_date: data.purchase_date || "",
-          storage_start_date: data.storage_start_date || "",
-          pickup_date: data.pickup_date || "",
-          pickup_date_status: data.pickup_date_status || "",
-          delivery_date: data.delivery_date || "",
-          delivery_date_status: data.delivery_date_status || "",
-          transport_listed_price: data.transport_listed_price || 0,
-          balance_payment_time: data.balance_payment_time || "",
-          balance_payment_method: data.balance_payment_method || "",
-          storage_fee: data.storage_fee || 0,
-          company_name: data.company_name || "",
-          mc_number: data.mc_number || "",
-          transporter_name: data.transporter_name || "",
-          transporter_phone: data.transporter_phone || "",
-          transporter_payment_date: data.transporter_payment_date || ""
+          vin: combinedData.vin || "",
+          lot_number: combinedData.lot_number || "",
+          stock_number: combinedData.stock_number || "",
+          year: combinedData.year || 0,
+          destination: combinedData.destination || "",
+          client_name: combinedData.client_name || "",
+          client_phone_number: combinedData.client_phone_number || "",
+          client_passport_number: combinedData.client_passport_number || "",
+          client_buyer_id: combinedData.client_buyer_id || "",
+          address: combinedData.address || "",
+          city: combinedData.city || "",
+          state: combinedData.state || "",
+          zip_code: combinedData.zip_code || "",
+          receiver_port_id: combinedData.receiver_port_id || 0,
+          warehouse_id: combinedData.warehouse_id || 0,
+          gate_pass_pin: combinedData.gate_pass_pin || "",
+          is_sublot: combinedData.is_sublot || false,
+          manufacturer_id: combinedData.manufacturer_id || 0,
+          model_id: combinedData.model_id || 0,
+          generation_id: combinedData.generation_id || 0,
+          body_type_id: combinedData.body_type_id || 0,
+          has_key: combinedData.has_key || false,
+          highlights: combinedData.highlights || "",
+          auction_id: combinedData.auction_id || 0,
+          dealer_id: combinedData.dealer_id || 0,
+          sub_dealer_id: combinedData.sub_dealer_id || 0,
+          pay_due_date: combinedData.pay_due_date || "",
+          auction_won_price: combinedData.auction_won_price || 0,
+          auction_final_price: combinedData.auction_final_price || 0,
+          auction_pay_date: combinedData.auction_pay_date || "",
+          purchase_date: combinedData.purchase_date || "",
+          storage_start_date: combinedData.storage_start_date || "",
+          pickup_date: combinedData.pickup_date || "",
+          pickup_date_status: combinedData.pickup_date_status || "",
+          delivery_date: combinedData.delivery_date || "",
+          delivery_date_status: combinedData.delivery_date_status || "",
+          transport_listed_price: combinedData.transport_listed_price || 0,
+          balance_payment_time: combinedData.balance_payment_time || "",
+          balance_payment_method: combinedData.balance_payment_method || "",
+          storage_fee: combinedData.storage_fee || 0,
+          company_name: combinedData.company_name || "",
+          mc_number: combinedData.mc_number || "",
+          transporter_name: combinedData.transporter_name || "",
+          transporter_phone: combinedData.transporter_phone || "",
+          transporter_payment_date: combinedData.transporter_payment_date || ""
         })
 
         // Initialize sections based on data presence
@@ -193,24 +212,27 @@ export const useVehicleDetails = () => {
           landTransport: null
         };
 
-        if (data.destination) {
+        if (combinedData.destination || combinedData.receiver_port_id || combinedData.warehouse_id) {
           updatedSectionsData.transport = {};
         }
         
-        if (data.client_name || data.client_phone_number || data.client_passport_number || data.client_buyer_id || 
-            data.dealer_id || data.sub_dealer_id || data.pay_due_date) {
+        if (combinedData.client_name || combinedData.client_phone_number || combinedData.client_passport_number || 
+            combinedData.client_buyer_id || combinedData.dealer_id || combinedData.sub_dealer_id || 
+            combinedData.pay_due_date) {
           updatedSectionsData.dealer = {};
         }
 
         // Check if auction data exists
-        if (data.auction_id || data.lot_number || data.address || data.purchase_date || 
-            data.auction_won_price || data.auction_final_price || data.auction_pay_date) {
+        if (combinedData.auction_id || combinedData.lot_number || combinedData.address || 
+            combinedData.purchase_date || combinedData.auction_won_price || 
+            combinedData.auction_final_price || combinedData.auction_pay_date) {
           updatedSectionsData.auction = {};
         }
         
         // Check if land transport data exists
-        if (data.storage_start_date || data.pickup_date || data.delivery_date || 
-            data.transport_listed_price || data.company_name || data.transporter_name) {
+        if (combinedData.storage_start_date || combinedData.pickup_date || combinedData.delivery_date || 
+            combinedData.transport_listed_price || combinedData.company_name || 
+            combinedData.transporter_name || combinedData.balance_payment_method) {
           updatedSectionsData.landTransport = {};
         }
         

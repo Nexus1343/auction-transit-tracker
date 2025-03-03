@@ -22,6 +22,9 @@ export const useLandTransportClosing = (
 
   // Fields that are part of the land transportation section
   const landTransportFields = [
+    'receiver_port_id',
+    'warehouse_id',
+    'destination',
     'storage_start_date',
     'pickup_date',
     'pickup_date_status',
@@ -35,13 +38,10 @@ export const useLandTransportClosing = (
     'mc_number',
     'transporter_name',
     'transporter_phone',
-    'transporter_payment_date',
-    'receiver_port_id',
-    'warehouse_id',
-    'destination'
+    'transporter_payment_date'
   ] as const;
 
-  // Check if any land transportation fields have data
+  // Check if any land transport fields have data
   const hasLandTransportData = () => {
     const values = form.getValues();
     return landTransportFields.some(field => {
@@ -66,15 +66,13 @@ export const useLandTransportClosing = (
   };
 
   const handleConfirmClose = () => {
-    // Reset land transportation fields
+    // Reset land transport fields
     const defaultValues: Partial<VehicleFormValues> = {};
     
     landTransportFields.forEach(field => {
       if (['receiver_port_id', 'warehouse_id', 'transport_listed_price', 'storage_fee'].includes(field)) {
-        // For numeric fields
         defaultValues[field] = 0;
       } else {
-        // For string fields
         defaultValues[field] = '';
       }
     });

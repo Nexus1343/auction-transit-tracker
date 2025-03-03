@@ -30,9 +30,6 @@ export const useAuctionClosing = (
     'zip_code',
     'gate_pass_pin',
     'is_sublot',
-    'receiver_port_id',
-    'warehouse_id',
-    'destination',
     'purchase_date',
     'auction_won_price',
     'auction_final_price',
@@ -69,14 +66,11 @@ export const useAuctionClosing = (
     const defaultValues: Partial<VehicleFormValues> = {};
     
     auctionFields.forEach(field => {
-      if (['auction_id', 'receiver_port_id', 'warehouse_id', 'auction_won_price', 'auction_final_price'].includes(field)) {
-        // For numeric fields
+      if (['auction_id', 'auction_won_price', 'auction_final_price'].includes(field)) {
         defaultValues[field] = 0;
       } else if (field === 'is_sublot') {
-        // For boolean fields
         defaultValues[field] = false;
       } else {
-        // For string fields
         defaultValues[field] = '';
       }
     });
