@@ -1,3 +1,4 @@
+<lov-code>
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
@@ -172,30 +173,32 @@ const VehicleDetailsPage = () => {
           setSectionsData(prev => ({...prev, dealer: {}}))
         }
         
-        supabase
-          .from('vehicle_status_history')
-          .select(`
-            id,
-            created_at,
-            notes,
-            status_id,
-            changed_by
-          `)
-          .eq('vehicle_id', parseInt(id))
-          .order('created_at', { ascending: false })
-          .then(({ data: historyData, error: historyError }) => {
-            if (!historyError && historyData) {
-              const formattedHistory = historyData.map(item => ({
-                date: new Date(item.created_at).toLocaleString(),
-                user: "Admin", // Replace with actual user when available
-                action: item.notes || "Status updated"
-              }))
-              setHistory(formattedHistory)
-            }
-          })
-          .catch(error => {
-            console.error('Error fetching history:', error)
-          })
+        try {
+          const { data: historyData, error: historyError } = await supabase
+            .from('vehicle_status_history')
+            .select(`
+              id,
+              created_at,
+              notes,
+              status_id,
+              changed_by
+            `)
+            .eq('vehicle_id', parseInt(id))
+            .order('created_at', { ascending: false })
+          
+          if (historyError) throw historyError
+          
+          if (historyData) {
+            const formattedHistory = historyData.map(item => ({
+              date: new Date(item.created_at).toLocaleString(),
+              user: "Admin", // Replace with actual user when available
+              action: item.notes || "Status updated"
+            }))
+            setHistory(formattedHistory)
+          }
+        } catch (historyError) {
+          console.error('Error fetching history:', historyError)
+        }
         
       } catch (error) {
         console.error('Error fetching vehicle details:', error)
@@ -241,53 +244,40 @@ const VehicleDetailsPage = () => {
       
       if (error) throw error
       
-      await supabase
-        .from('vehicle_status_history')
-        .insert({
-          vehicle_id: vehicle.id,
-          notes: "Vehicle details updated",
-          created_at: new Date().toISOString()
-        })
-        .then(({ data, error }) => {
-          if (error) {
-            console.error('Error updating history:', error)
-            return null
-          }
-          
-          return supabase
-            .from('vehicle_status_history')
-            .select(`
-              id,
-              created_at,
-              notes,
-              status_id,
-              changed_by
-            `)
-            .eq('vehicle_id', vehicle.id)
-            .order('created_at', { ascending: false })
-        })
-        .then(result => {
-          if (!result) return
-          
-          const { data: historyData, error: historyError } = result
-          
-          if (historyError) {
-            console.error('Error refreshing history:', historyError)
-            return
-          }
-          
-          if (historyData) {
-            const formattedHistory = historyData.map(item => ({
-              date: new Date(item.created_at).toLocaleString(),
-              user: "Admin", // Replace with actual user when available
-              action: item.notes || "Status updated"
-            }))
-            setHistory(formattedHistory)
-          }
-        })
-        .catch(error => {
-          console.error('Error in promise chain:', error)
-        })
+      try {
+        await supabase
+          .from('vehicle_status_history')
+          .insert({
+            vehicle_id: vehicle.id,
+            notes: "Vehicle details updated",
+            created_at: new Date().toISOString()
+          })
+        
+        const { data: historyData, error: historyError } = await supabase
+          .from('vehicle_status_history')
+          .select(`
+            id,
+            created_at,
+            notes,
+            status_id,
+            changed_by
+          `)
+          .eq('vehicle_id', vehicle.id)
+          .order('created_at', { ascending: false })
+        
+        if (historyError) throw historyError
+        
+        if (historyData) {
+          const formattedHistory = historyData.map(item => ({
+            date: new Date(item.created_at).toLocaleString(),
+            user: "Admin", // Replace with actual user when available
+            action: item.notes || "Status updated"
+          }))
+          setHistory(formattedHistory)
+        }
+      } catch (historyError) {
+        console.error('Error updating history:', historyError)
+      }
       
       toast({
         title: "Success",
@@ -312,53 +302,42 @@ const VehicleDetailsPage = () => {
     setCurrentStatus(newStatus)
     
     try {
-      await supabase
+      const { error } = await supabase
         .from('vehicle_status_history')
         .insert({
           vehicle_id: vehicle.id,
           notes: `Changed status to "${newStatus}"`,
           created_at: new Date().toISOString()
         })
-        .then(({ data, error }) => {
-          if (error) {
-            console.error('Error updating history:', error)
-            return null
-          }
-          
-          return supabase
-            .from('vehicle_status_history')
-            .select(`
-              id,
-              created_at,
-              notes,
-              status_id,
-              changed_by
-            `)
-            .eq('vehicle_id', vehicle.id)
-            .order('created_at', { ascending: false })
-        })
-        .then(result => {
-          if (!result) return
-          
-          const { data: historyData, error: historyError } = result
-          
-          if (historyError) {
-            console.error('Error refreshing history:', historyError)
-            return
-          }
-          
-          if (historyData) {
-            const formattedHistory = historyData.map(item => ({
-              date: new Date(item.created_at).toLocaleString(),
-              user: "Admin", // Replace with actual user when available
-              action: item.notes || "Status updated"
-            }))
-            setHistory(formattedHistory)
-          }
-        })
-        .catch(error => {
-          console.error('Error in promise chain:', error)
-        })
+      
+      if (error) throw error
+      
+      try {
+        const { data: historyData, error: historyError } = await supabase
+          .from('vehicle_status_history')
+          .select(`
+            id,
+            created_at,
+            notes,
+            status_id,
+            changed_by
+          `)
+          .eq('vehicle_id', vehicle.id)
+          .order('created_at', { ascending: false })
+        
+        if (historyError) throw historyError
+        
+        if (historyData) {
+          const formattedHistory = historyData.map(item => ({
+            date: new Date(item.created_at).toLocaleString(),
+            user: "Admin", // Replace with actual user when available
+            action: item.notes || "Status updated"
+          }))
+          setHistory(formattedHistory)
+        }
+      } catch (historyError) {
+        console.error('Error refreshing history:', historyError)
+      }
       
       toast({
         title: "Status Updated",
@@ -386,53 +365,54 @@ const VehicleDetailsPage = () => {
     }));
     
     if (vehicle) {
-      supabase
-        .from('vehicle_status_history')
-        .insert({
-          vehicle_id: vehicle.id,
-          notes: `Added ${section} information`,
-          created_at: new Date().toISOString()
-        })
-        .then(({ data, error }) => {
-          if (error) {
-            console.error('Error updating history:', error)
-            return null
-          }
-          
-          return supabase
-            .from('vehicle_status_history')
-            .select(`
-              id,
-              created_at,
-              notes,
-              status_id,
-              changed_by
-            `)
-            .eq('vehicle_id', vehicle.id)
-            .order('created_at', { ascending: false })
-        })
-        .then(result => {
-          if (!result) return
-          
-          const { data: historyData, error: historyError } = result
-          
-          if (historyError) {
-            console.error('Error refreshing history:', historyError)
-            return
-          }
-          
-          if (historyData) {
-            const formattedHistory = historyData.map(item => ({
-              date: new Date(item.created_at).toLocaleString(),
-              user: "Admin", // Replace with actual user when available
-              action: item.notes || "Status updated"
-            }))
-            setHistory(formattedHistory)
-          }
-        })
-        .catch(error => {
-          console.error('Error in promise chain:', error)
-        })
+      try {
+        supabase
+          .from('vehicle_status_history')
+          .insert({
+            vehicle_id: vehicle.id,
+            notes: `Added ${section} information`,
+            created_at: new Date().toISOString()
+          })
+          .then(({ error }) => {
+            if (error) {
+              console.error('Error updating history:', error)
+              return null
+            }
+            
+            return supabase
+              .from('vehicle_status_history')
+              .select(`
+                id,
+                created_at,
+                notes,
+                status_id,
+                changed_by
+              `)
+              .eq('vehicle_id', vehicle.id)
+              .order('created_at', { ascending: false })
+          })
+          .then(result => {
+            if (!result) return
+            
+            const { data: historyData, error: historyError } = result
+            
+            if (historyError) {
+              console.error('Error refreshing history:', historyError)
+              return
+            }
+            
+            if (historyData) {
+              const formattedHistory = historyData.map(item => ({
+                date: new Date(item.created_at).toLocaleString(),
+                user: "Admin", // Replace with actual user when available
+                action: item.notes || "Status updated"
+              }))
+              setHistory(formattedHistory)
+            }
+          })
+      } catch (error) {
+        console.error('Error in promise chain:', error)
+      }
     }
   }
 
@@ -443,53 +423,54 @@ const VehicleDetailsPage = () => {
     }));
     
     if (vehicle) {
-      supabase
-        .from('vehicle_status_history')
-        .insert({
-          vehicle_id: vehicle.id,
-          notes: `Removed ${section} information`,
-          created_at: new Date().toISOString()
-        })
-        .then(({ data, error }) => {
-          if (error) {
-            console.error('Error updating history:', error)
-            return null
-          }
-          
-          return supabase
-            .from('vehicle_status_history')
-            .select(`
-              id,
-              created_at,
-              notes,
-              status_id,
-              changed_by
-            `)
-            .eq('vehicle_id', vehicle.id)
-            .order('created_at', { ascending: false })
-        })
-        .then(result => {
-          if (!result) return
-          
-          const { data: historyData, error: historyError } = result
-          
-          if (historyError) {
-            console.error('Error refreshing history:', historyError)
-            return
-          }
-          
-          if (historyData) {
-            const formattedHistory = historyData.map(item => ({
-              date: new Date(item.created_at).toLocaleString(),
-              user: "Admin", // Replace with actual user when available
-              action: item.notes || "Status updated"
-            }))
-            setHistory(formattedHistory)
-          }
-        })
-        .catch(error => {
-          console.error('Error in promise chain:', error)
-        })
+      try {
+        supabase
+          .from('vehicle_status_history')
+          .insert({
+            vehicle_id: vehicle.id,
+            notes: `Removed ${section} information`,
+            created_at: new Date().toISOString()
+          })
+          .then(({ error }) => {
+            if (error) {
+              console.error('Error updating history:', error)
+              return null
+            }
+            
+            return supabase
+              .from('vehicle_status_history')
+              .select(`
+                id,
+                created_at,
+                notes,
+                status_id,
+                changed_by
+              `)
+              .eq('vehicle_id', vehicle.id)
+              .order('created_at', { ascending: false })
+          })
+          .then(result => {
+            if (!result) return
+            
+            const { data: historyData, error: historyError } = result
+            
+            if (historyError) {
+              console.error('Error refreshing history:', historyError)
+              return
+            }
+            
+            if (historyData) {
+              const formattedHistory = historyData.map(item => ({
+                date: new Date(item.created_at).toLocaleString(),
+                user: "Admin", // Replace with actual user when available
+                action: item.notes || "Status updated"
+              }))
+              setHistory(formattedHistory)
+            }
+          })
+      } catch (error) {
+        console.error('Error in promise chain:', error)
+      }
     }
   }
 
@@ -1048,59 +1029,4 @@ const VehicleDetailsPage = () => {
                       <div className="text-sm text-gray-500 mb-4">
                         Drop files here or click to upload
                       </div>
-                      <button type="button" className="bg-blue-50 text-blue-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-100">
-                        Browse Files
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="flex justify-end mb-6">
-              <Button type="submit" disabled={isSaving}>
-                {isSaving ? "Saving..." : "Save Changes"}
-              </Button>
-            </div>
-          </form>
-        </Form>
-
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-6">
-            <h2 className="text-lg font-semibold flex items-center mb-4">
-              <Clock className="w-5 h-5 text-gray-500 mr-2" />
-              History
-            </h2>
-            <div className="space-y-4">
-              {history.length > 0 ? (
-                history.map((event, index) => (
-                  <div key={index} className="flex items-start space-x-3">
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                        <AlertCircle className="w-4 h-4 text-blue-600" />
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex items-center text-sm">
-                        <span className="font-medium">{event.user}</span>
-                        <span className="mx-2">•</span>
-                        <span className="text-gray-500">{event.date}</span>
-                      </div>
-                      <p className="mt-1 text-sm text-gray-600">{event.action}</p>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-4 text-gray-500">
-                  No history records available
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-export default VehicleDetailsPage
+                      <button type="button" className="bg-blue
