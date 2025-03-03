@@ -1,117 +1,107 @@
 
-import { useState } from "react";
-import { UseFormReturn } from "react-hook-form";
-import { VehicleFormValues, SectionsData } from "../types/vehicleTypes";
-import { useToast } from "@/hooks/use-toast";
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { UseFormReturn } from "react-hook-form"
+import { VehicleFormValues, SectionsData } from "../types/vehicleTypes"
 
 export const useLandTransportClosing = (
   form: UseFormReturn<VehicleFormValues>,
   removeSection: (section: keyof SectionsData) => void
 ) => {
-  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  const { toast } = useToast();
-
-  // Fields that are part of the land transportation section
-  const landTransportFields = [
-    'receiver_port_id',
-    'warehouse_id',
-    'destination',
-    'storage_start_date',
-    'pickup_date',
-    'pickup_date_status',
-    'delivery_date',
-    'delivery_date_status',
-    'transport_listed_price',
-    'balance_payment_time',
-    'balance_payment_method',
-    'storage_fee',
-    'company_name',
-    'mc_number',
-    'transporter_name',
-    'transporter_phone',
-    'transporter_payment_date'
-  ] as const;
-
-  // Check if any land transport fields have data
-  const hasLandTransportData = () => {
-    const values = form.getValues();
-    return landTransportFields.some(field => {
-      const value = values[field];
-      if (typeof value === 'string') return value.trim() !== '';
-      if (typeof value === 'number') return value !== 0;
-      return false;
-    });
-  };
-
-  const confirmClose = (section: keyof SectionsData) => {
-    if (section !== 'landTransport') {
-      removeSection(section);
-      return;
-    }
-
-    if (hasLandTransportData()) {
-      setIsConfirmOpen(true);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+  
+  const confirmClose = () => {
+    // Check if any land transportation fields have values
+    const formValues = form.getValues()
+    
+    const hasLandTransportData = 
+      formValues.receiver_port_id !== 0 ||
+      formValues.warehouse_id !== 0 ||
+      !!formValues.destination ||
+      !!formValues.storage_start_date ||
+      !!formValues.pickup_date ||
+      !!formValues.pickup_date_status ||
+      !!formValues.delivery_date ||
+      !!formValues.delivery_date_status ||
+      formValues.transport_listed_price !== 0 ||
+      !!formValues.balance_payment_time ||
+      !!formValues.balance_payment_method ||
+      formValues.storage_fee !== 0 ||
+      !!formValues.company_name ||
+      !!formValues.mc_number ||
+      !!formValues.transporter_name ||
+      !!formValues.transporter_phone ||
+      !!formValues.transporter_payment_date
+    
+    if (hasLandTransportData) {
+      setIsConfirmOpen(true)
     } else {
-      removeSection('landTransport');
+      removeSection("landTransport")
     }
-  };
-
-  const handleConfirmClose = () => {
-    // Reset land transport fields
-    const defaultValues: Partial<VehicleFormValues> = {};
+  }
+  
+  const handleConfirm = () => {
+    setIsConfirmOpen(false)
     
-    landTransportFields.forEach(field => {
-      if (['receiver_port_id', 'warehouse_id', 'transport_listed_price', 'storage_fee'].includes(field)) {
-        defaultValues[field] = 0;
-      } else {
-        defaultValues[field] = '';
-      }
-    });
-
-    form.reset({ ...form.getValues(), ...defaultValues });
-    removeSection('landTransport');
-    setIsConfirmOpen(false);
+    // Reset land transportation related fields
+    form.setValue("receiver_port_id", 0)
+    form.setValue("warehouse_id", 0)
+    form.setValue("destination", "")
+    form.setValue("storage_start_date", "")
+    form.setValue("pickup_date", "")
+    form.setValue("pickup_date_status", "")
+    form.setValue("delivery_date", "")
+    form.setValue("delivery_date_status", "")
+    form.setValue("transport_listed_price", 0)
+    form.setValue("balance_payment_time", "")
+    form.setValue("balance_payment_method", "")
+    form.setValue("storage_fee", 0)
+    form.setValue("company_name", "")
+    form.setValue("mc_number", "")
+    form.setValue("transporter_name", "")
+    form.setValue("transporter_phone", "")
+    form.setValue("transporter_payment_date", "")
     
-    toast({
-      title: "Land Transportation Information Cleared",
-      description: "The land transportation information has been reset and the section closed."
-    });
-  };
-
+    removeSection("landTransport")
+  }
+  
+  const handleCancel = () => {
+    setIsConfirmOpen(false)
+  }
+  
   const ConfirmationDialog = () => (
-    <Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Confirm Close</DialogTitle>
-          <DialogDescription>
-            You have unsaved land transportation information. Are you sure you want to close this section? 
-            All entered land transportation data will be lost.
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter className="flex justify-between sm:justify-between">
-          <Button variant="outline" onClick={() => setIsConfirmOpen(false)}>
-            Cancel
-          </Button>
-          <Button variant="destructive" onClick={handleConfirmClose}>
-            Yes, Clear Data
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-
+    <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>
+            Remove Land Transportation Information?
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            This will remove all land transportation information for this vehicle. This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={handleCancel}>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={handleConfirm}>
+            Remove
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
+  
   return {
     confirmClose,
-    ConfirmationDialog,
-    isConfirmOpen
-  };
-};
+    ConfirmationDialog
+  }
+}

@@ -1,115 +1,85 @@
 
-import { useState } from "react";
-import { UseFormReturn } from "react-hook-form";
-import { VehicleFormValues, SectionsData } from "../types/vehicleTypes";
-import { useToast } from "@/hooks/use-toast";
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { UseFormReturn } from "react-hook-form"
+import { VehicleFormValues, SectionsData } from "../types/vehicleTypes"
 
 export const useAuctionClosing = (
   form: UseFormReturn<VehicleFormValues>,
   removeSection: (section: keyof SectionsData) => void
 ) => {
-  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  const { toast } = useToast();
-
-  // Fields that are part of the auction section
-  const auctionFields = [
-    'auction_id',
-    'lot_number',
-    'address',
-    'city',
-    'state',
-    'zip_code',
-    'gate_pass_pin',
-    'is_sublot',
-    'purchase_date',
-    'auction_won_price',
-    'auction_final_price',
-    'auction_pay_date'
-  ] as const;
-
-  // Check if any auction fields have data
-  const hasAuctionData = () => {
-    const values = form.getValues();
-    return auctionFields.some(field => {
-      const value = values[field];
-      if (typeof value === 'string') return value.trim() !== '';
-      if (typeof value === 'number') return value !== 0;
-      if (typeof value === 'boolean') return value === true;
-      return false;
-    });
-  };
-
-  const confirmClose = (section: keyof SectionsData) => {
-    if (section !== 'auction') {
-      removeSection(section);
-      return;
-    }
-
-    if (hasAuctionData()) {
-      setIsConfirmOpen(true);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+  
+  const confirmClose = () => {
+    // Check if any auction fields have values
+    const formValues = form.getValues()
+    
+    const hasAuctionData = 
+      formValues.auction_id !== 0 ||
+      !!formValues.pay_due_date ||
+      formValues.auction_won_price !== 0 ||
+      formValues.auction_final_price !== 0 ||
+      !!formValues.auction_pay_date ||
+      !!formValues.purchase_date
+    
+    if (hasAuctionData) {
+      setIsConfirmOpen(true)
     } else {
-      removeSection('auction');
+      removeSection("auction")
     }
-  };
-
-  const handleConfirmClose = () => {
-    // Reset auction fields
-    const defaultValues: Partial<VehicleFormValues> = {};
+  }
+  
+  const handleConfirm = () => {
+    setIsConfirmOpen(false)
     
-    auctionFields.forEach(field => {
-      if (['auction_id', 'auction_won_price', 'auction_final_price'].includes(field)) {
-        defaultValues[field] = 0;
-      } else if (field === 'is_sublot') {
-        defaultValues[field] = false;
-      } else {
-        defaultValues[field] = '';
-      }
-    });
-
-    form.reset({ ...form.getValues(), ...defaultValues });
-    removeSection('auction');
-    setIsConfirmOpen(false);
+    // Reset auction related fields
+    form.setValue("auction_id", 0)
+    form.setValue("pay_due_date", "")
+    form.setValue("auction_won_price", 0)
+    form.setValue("auction_final_price", 0)
+    form.setValue("auction_pay_date", "")
+    form.setValue("purchase_date", "")
     
-    toast({
-      title: "Auction Information Cleared",
-      description: "The auction information has been reset and the section closed."
-    });
-  };
-
+    removeSection("auction")
+  }
+  
+  const handleCancel = () => {
+    setIsConfirmOpen(false)
+  }
+  
   const ConfirmationDialog = () => (
-    <Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Confirm Close</DialogTitle>
-          <DialogDescription>
-            You have unsaved auction information. Are you sure you want to close this section? 
-            All entered auction data will be lost.
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter className="flex justify-between sm:justify-between">
-          <Button variant="outline" onClick={() => setIsConfirmOpen(false)}>
-            Cancel
-          </Button>
-          <Button variant="destructive" onClick={handleConfirmClose}>
-            Yes, Clear Data
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-
+    <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>
+            Remove Auction Information?
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            This will remove all auction information for this vehicle. This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={handleCancel}>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={handleConfirm}>
+            Remove
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
+  
   return {
     confirmClose,
-    ConfirmationDialog,
-    isConfirmOpen
-  };
-};
+    ConfirmationDialog
+  }
+}
