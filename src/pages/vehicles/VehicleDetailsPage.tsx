@@ -15,7 +15,8 @@ import {
   Upload,
   AlertCircle,
   Plus,
-  X
+  X,
+  MapPin
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
@@ -41,6 +42,14 @@ interface VehicleDetails {
   client_name?: string
   client_phone_number?: string
   client_passport_number?: string
+  address?: string
+  city?: string
+  state?: string
+  zip_code?: string
+  receiver_port_id?: number
+  warehouse_id?: number
+  gate_pass_pin?: string
+  is_sublot?: boolean
   // Add other fields as needed
 }
 
@@ -92,7 +101,15 @@ const VehicleDetailsPage = () => {
       destination: "",
       client_name: "",
       client_phone_number: "",
-      client_passport_number: ""
+      client_passport_number: "",
+      address: "",
+      city: "",
+      state: "",
+      zip_code: "",
+      receiver_port_id: 0,
+      warehouse_id: 0,
+      gate_pass_pin: "",
+      is_sublot: false
     }
   })
   
@@ -114,6 +131,14 @@ const VehicleDetailsPage = () => {
             client_name,
             client_phone_number,
             client_passport_number,
+            address,
+            city,
+            state,
+            zip_code,
+            receiver_port_id,
+            warehouse_id,
+            gate_pass_pin,
+            is_sublot,
             manufacturer:manufacturer_id(name),
             model:model_id(name)
           `)
@@ -133,7 +158,15 @@ const VehicleDetailsPage = () => {
           destination: data.destination || "",
           client_name: data.client_name || "",
           client_phone_number: data.client_phone_number || "",
-          client_passport_number: data.client_passport_number || ""
+          client_passport_number: data.client_passport_number || "",
+          address: data.address || "",
+          city: data.city || "",
+          state: data.state || "",
+          zip_code: data.zip_code || "",
+          receiver_port_id: data.receiver_port_id || 0,
+          warehouse_id: data.warehouse_id || 0,
+          gate_pass_pin: data.gate_pass_pin || "",
+          is_sublot: data.is_sublot || false
         })
 
         // Load section data based on whether relevant fields have data
@@ -197,7 +230,15 @@ const VehicleDetailsPage = () => {
           destination: data.destination,
           client_name: data.client_name,
           client_phone_number: data.client_phone_number,
-          client_passport_number: data.client_passport_number
+          client_passport_number: data.client_passport_number,
+          address: data.address,
+          city: data.city,
+          state: data.state,
+          zip_code: data.zip_code,
+          receiver_port_id: data.receiver_port_id,
+          warehouse_id: data.warehouse_id,
+          gate_pass_pin: data.gate_pass_pin,
+          is_sublot: data.is_sublot
         })
         .eq('id', vehicle.id)
       
@@ -211,33 +252,47 @@ const VehicleDetailsPage = () => {
           notes: "Vehicle details updated",
           created_at: new Date().toISOString()
         })
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('Error updating history:', error)
+          }
+          
+          // Refresh history
+          return supabase
+            .from('vehicle_status_history')
+            .select(`
+              id,
+              created_at,
+              notes,
+              status_id,
+              changed_by
+            `)
+            .eq('vehicle_id', vehicle.id)
+            .order('created_at', { ascending: false })
+        })
+        .then(({ data: historyData, error: historyError }) => {
+          if (historyError) {
+            console.error('Error refreshing history:', historyError)
+            return
+          }
+          
+          if (historyData) {
+            const formattedHistory = historyData.map(item => ({
+              date: new Date(item.created_at).toLocaleString(),
+              user: "Admin", // Replace with actual user when available
+              action: item.notes || "Status updated"
+            }))
+            setHistory(formattedHistory)
+          }
+        })
+        .catch(error => {
+          console.error('Error in promise chain:', error)
+        })
       
       toast({
         title: "Success",
         description: "Vehicle details updated successfully.",
       })
-      
-      // Refresh history
-      const { data: historyData } = await supabase
-        .from('vehicle_status_history')
-        .select(`
-          id,
-          created_at,
-          notes,
-          status_id,
-          changed_by
-        `)
-        .eq('vehicle_id', vehicle.id)
-        .order('created_at', { ascending: false })
-      
-      if (historyData) {
-        const formattedHistory = historyData.map(item => ({
-          date: new Date(item.created_at).toLocaleString(),
-          user: "Admin", // Replace with actual user when available
-          action: item.notes || "Status updated"
-        }))
-        setHistory(formattedHistory)
-      }
       
     } catch (error) {
       console.error('Error updating vehicle details:', error)
@@ -266,28 +321,42 @@ const VehicleDetailsPage = () => {
           notes: `Changed status to "${newStatus}"`,
           created_at: new Date().toISOString()
         })
-      
-      // Refresh history
-      const { data: historyData } = await supabase
-        .from('vehicle_status_history')
-        .select(`
-          id,
-          created_at,
-          notes,
-          status_id,
-          changed_by
-        `)
-        .eq('vehicle_id', vehicle.id)
-        .order('created_at', { ascending: false })
-      
-      if (historyData) {
-        const formattedHistory = historyData.map(item => ({
-          date: new Date(item.created_at).toLocaleString(),
-          user: "Admin", // Replace with actual user when available
-          action: item.notes || "Status updated"
-        }))
-        setHistory(formattedHistory)
-      }
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('Error updating history:', error)
+          }
+          
+          // Refresh history
+          return supabase
+            .from('vehicle_status_history')
+            .select(`
+              id,
+              created_at,
+              notes,
+              status_id,
+              changed_by
+            `)
+            .eq('vehicle_id', vehicle.id)
+            .order('created_at', { ascending: false })
+        })
+        .then(({ data: historyData, error: historyError }) => {
+          if (historyError) {
+            console.error('Error refreshing history:', historyError)
+            return
+          }
+          
+          if (historyData) {
+            const formattedHistory = historyData.map(item => ({
+              date: new Date(item.created_at).toLocaleString(),
+              user: "Admin", // Replace with actual user when available
+              action: item.notes || "Status updated"
+            }))
+            setHistory(formattedHistory)
+          }
+        })
+        .catch(error => {
+          console.error('Error in promise chain:', error)
+        })
       
       toast({
         title: "Status Updated",
@@ -324,7 +393,12 @@ const VehicleDetailsPage = () => {
           notes: `Added ${section} information`,
           created_at: new Date().toISOString()
         })
-        .then(({ data }) => {
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('Error updating history:', error)
+            return null
+          }
+          
           // Refresh history after adding
           return supabase
             .from('vehicle_status_history')
@@ -338,7 +412,16 @@ const VehicleDetailsPage = () => {
             .eq('vehicle_id', vehicle.id)
             .order('created_at', { ascending: false })
         })
-        .then(({ data: historyData }) => {
+        .then(result => {
+          if (!result) return
+          
+          const { data: historyData, error: historyError } = result
+          
+          if (historyError) {
+            console.error('Error refreshing history:', historyError)
+            return
+          }
+          
           if (historyData) {
             const formattedHistory = historyData.map(item => ({
               date: new Date(item.created_at).toLocaleString(),
@@ -349,7 +432,7 @@ const VehicleDetailsPage = () => {
           }
         })
         .catch(error => {
-          console.error('Error updating history:', error)
+          console.error('Error in promise chain:', error)
         })
     }
   }
@@ -369,7 +452,12 @@ const VehicleDetailsPage = () => {
           notes: `Removed ${section} information`,
           created_at: new Date().toISOString()
         })
-        .then(({ data }) => {
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('Error updating history:', error)
+            return null
+          }
+          
           // Refresh history after adding
           return supabase
             .from('vehicle_status_history')
@@ -383,7 +471,16 @@ const VehicleDetailsPage = () => {
             .eq('vehicle_id', vehicle.id)
             .order('created_at', { ascending: false })
         })
-        .then(({ data: historyData }) => {
+        .then(result => {
+          if (!result) return
+          
+          const { data: historyData, error: historyError } = result
+          
+          if (historyError) {
+            console.error('Error refreshing history:', historyError)
+            return
+          }
+          
           if (historyData) {
             const formattedHistory = historyData.map(item => ({
               date: new Date(item.created_at).toLocaleString(),
@@ -394,7 +491,7 @@ const VehicleDetailsPage = () => {
           }
         })
         .catch(error => {
-          console.error('Error updating history:', error)
+          console.error('Error in promise chain:', error)
         })
     }
   }
@@ -607,6 +704,184 @@ const VehicleDetailsPage = () => {
                     <button type="button" className="bg-blue-50 text-blue-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-100">
                       Browse Files
                     </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Auction Location Section */}
+            <div className="bg-white rounded-lg shadow mb-6">
+              <div className="p-6">
+                <h2 className="text-lg font-semibold mb-6 flex items-center">
+                  <MapPin className="w-5 h-5 text-gray-500 mr-2" />
+                  Auction Location
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="address"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
+                            Address
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              placeholder="Address"
+                              className="w-full p-2 border rounded-lg"
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="city"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
+                              City
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                placeholder="City"
+                                className="w-full p-2 border rounded-lg"
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="state"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
+                              State
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                placeholder="State"
+                                className="w-full p-2 border rounded-lg"
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    <FormField
+                      control={form.control}
+                      name="zip_code"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
+                            Zip Code
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              placeholder="Zip Code"
+                              className="w-full p-2 border rounded-lg"
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="receiver_port_id"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
+                            Receiver Port
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              {...field}
+                              onChange={e => field.onChange(parseInt(e.target.value) || 0)}
+                              placeholder="Receiver Port ID"
+                              className="w-full p-2 border rounded-lg"
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="warehouse_id"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
+                            Warehouse
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              {...field}
+                              onChange={e => field.onChange(parseInt(e.target.value) || 0)}
+                              placeholder="Warehouse ID"
+                              className="w-full p-2 border rounded-lg"
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="gate_pass_pin"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
+                              Gate Pass PIN
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                placeholder="Gate Pass PIN"
+                                className="w-full p-2 border rounded-lg"
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="is_sublot"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
+                              Is Sublot
+                            </FormLabel>
+                            <FormControl>
+                              <div className="flex items-center h-10 mt-2">
+                                <input
+                                  type="checkbox"
+                                  checked={field.value}
+                                  onChange={e => field.onChange(e.target.checked)}
+                                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                />
+                                <span className="ml-2 text-sm text-gray-600">
+                                  Yes
+                                </span>
+                              </div>
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -842,3 +1117,4 @@ const VehicleDetailsPage = () => {
 }
 
 export default VehicleDetailsPage
+
