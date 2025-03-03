@@ -146,7 +146,7 @@ export type Database = {
             foreignKeyName: "dealers_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "user_profile"
             referencedColumns: ["id"]
           },
         ]
@@ -181,7 +181,7 @@ export type Database = {
             foreignKeyName: "documents_uploaded_by_fkey"
             columns: ["uploaded_by"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "user_profile"
             referencedColumns: ["id"]
           },
           {
@@ -630,7 +630,7 @@ export type Database = {
         }
         Relationships: []
       }
-      users: {
+      user_profile: {
         Row: {
           auth_id: string | null
           created_at: string | null
@@ -701,7 +701,7 @@ export type Database = {
             foreignKeyName: "vehicle_images_uploaded_by_fkey"
             columns: ["uploaded_by"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "user_profile"
             referencedColumns: ["id"]
           },
           {
@@ -743,7 +743,7 @@ export type Database = {
             foreignKeyName: "vehicle_status_history_changed_by_fkey"
             columns: ["changed_by"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "user_profile"
             referencedColumns: ["id"]
           },
           {
@@ -905,7 +905,7 @@ export type Database = {
             foreignKeyName: "vehicles_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "user_profile"
             referencedColumns: ["id"]
           },
           {
