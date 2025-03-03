@@ -1,24 +1,39 @@
 
-import { Building, MapPin, Truck } from "lucide-react"
+import { Building } from "lucide-react"
 import { FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { UseFormReturn } from "react-hook-form"
-import { VehicleFormValues } from "../types/vehicleTypes"
+import { SectionsData, VehicleFormValues } from "../types/vehicleTypes"
+import { SectionWrapper } from "./SectionWrapper"
+import { useAuctionClosing } from "../hooks/useAuctionClosing"
 
 interface AuctionSectionProps {
   form: UseFormReturn<VehicleFormValues>
+  sectionsData: SectionsData
+  addSection: (section: keyof SectionsData) => void
+  removeSection: (section: keyof SectionsData) => void
 }
 
-export const AuctionSection = ({ form }: AuctionSectionProps) => {
+export const AuctionSection = ({ 
+  form, 
+  sectionsData, 
+  addSection, 
+  removeSection 
+}: AuctionSectionProps) => {
+  const { confirmClose } = useAuctionClosing(form, removeSection);
+
   return (
-    <div className="bg-white rounded-lg shadow mb-6">
-      <div className="p-6">
-        <h2 className="text-lg font-semibold mb-6 flex items-center">
-          <Building className="w-5 h-5 text-gray-500 mr-2" />
-          Auction
-        </h2>
-        
+    <SectionWrapper
+      title={<><Building className="w-5 h-5 text-gray-500 mr-2" /> Auction</>}
+      section="auction"
+      sectionData={sectionsData}
+      addSection={addSection}
+      removeSection={confirmClose}
+      emptyDescription="No auction information has been added yet"
+      addButtonText="auction information"
+    >
+      <div className="space-y-6">
         {/* Platform Subsection */}
         <div className="mb-6">
           <h3 className="text-md font-medium mb-4 border-b pb-2">Platform</h3>
@@ -360,6 +375,6 @@ export const AuctionSection = ({ form }: AuctionSectionProps) => {
           </div>
         </div>
       </div>
-    </div>
+    </SectionWrapper>
   )
 }

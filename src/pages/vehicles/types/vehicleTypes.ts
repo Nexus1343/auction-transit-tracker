@@ -84,4 +84,5 @@ export interface SectionsData {
   transport: any | null
   dealer: any | null
   documents: any | null
+  auction: any | null
 }

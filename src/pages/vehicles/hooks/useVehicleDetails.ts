@@ -16,7 +16,8 @@ export const useVehicleDetails = () => {
   const [sectionsData, setSectionsData] = useState<SectionsData>({
     transport: null,
     dealer: null,
-    documents: null
+    documents: null,
+    auction: null
   })
 
   const form = useForm<VehicleFormValues>({
@@ -140,13 +141,30 @@ export const useVehicleDetails = () => {
           purchase_date: data.purchase_date || ""
         })
 
+        // Initialize sections based on data presence
+        const updatedSectionsData = { 
+          transport: null,
+          dealer: null, 
+          documents: null,
+          auction: null
+        };
+
         if (data.destination) {
-          setSectionsData(prev => ({...prev, transport: {}}))
+          updatedSectionsData.transport = {};
         }
         
-        if (data.client_name || data.client_phone_number || data.client_passport_number || data.client_buyer_id) {
-          setSectionsData(prev => ({...prev, dealer: {}}))
+        if (data.client_name || data.client_phone_number || data.client_passport_number || data.client_buyer_id || 
+            data.dealer_id || data.sub_dealer_id || data.pay_due_date) {
+          updatedSectionsData.dealer = {};
         }
+
+        // Check if auction data exists
+        if (data.auction_id || data.lot_number || data.address || data.purchase_date || 
+            data.auction_won_price || data.auction_final_price || data.auction_pay_date) {
+          updatedSectionsData.auction = {};
+        }
+        
+        setSectionsData(updatedSectionsData);
         
       } catch (error) {
         console.error('Error fetching vehicle details:', error)

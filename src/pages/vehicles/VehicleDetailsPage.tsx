@@ -14,6 +14,7 @@ import { useVehicleDetails } from "./hooks/useVehicleDetails"
 import { useVehicleStatus } from "./hooks/useVehicleStatus"
 import { useSectionActions } from "./hooks/useSectionActions"
 import { saveVehicleDetails } from "./services/vehicleService"
+import { useAuctionClosing } from "./hooks/useAuctionClosing"
 
 const VehicleDetailsPage = () => {
   const navigate = useNavigate()
@@ -91,13 +92,21 @@ const VehicleDetailsPage = () => {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <VehicleBasicInfo form={form} />
-            <AuctionSection form={form} />
+            
+            <AuctionSection 
+              form={form}
+              sectionsData={sectionsData}
+              addSection={addSection}
+              removeSection={removeSection}
+            />
+            
             <DealerSection 
               form={form}
               sectionsData={sectionsData}
               addSection={addSection}
               removeSection={removeSection}
             />
+            
             <DocumentsSection
               sectionsData={sectionsData}
               addSection={addSection}
