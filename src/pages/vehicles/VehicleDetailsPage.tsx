@@ -156,6 +156,7 @@ const VehicleDetailsPage = () => {
       console.log("Saving data:", data);
       
       // Make explicit data object to ensure all fields are included
+      // Convert ID values of 0 to null to avoid foreign key constraint errors
       const updateData = {
         vin: data.vin,
         lot_number: data.lot_number,
@@ -170,8 +171,8 @@ const VehicleDetailsPage = () => {
         city: data.city,
         state: data.state,
         zip_code: data.zip_code,
-        receiver_port_id: data.receiver_port_id,
-        warehouse_id: data.warehouse_id,
+        receiver_port_id: data.receiver_port_id > 0 ? data.receiver_port_id : null,
+        warehouse_id: data.warehouse_id > 0 ? data.warehouse_id : null,
         gate_pass_pin: data.gate_pass_pin,
         is_sublot: data.is_sublot
       };
