@@ -152,6 +152,7 @@ const VehicleDetailsPage = () => {
     
     setIsSaving(true)
     try {
+      console.log("Saving data:", data);
       const { error } = await supabase
         .from('vehicles')
         .update({
@@ -163,6 +164,7 @@ const VehicleDetailsPage = () => {
           client_name: data.client_name,
           client_phone_number: data.client_phone_number,
           client_passport_number: data.client_passport_number,
+          // Make sure these Auction Location fields are included in the update
           address: data.address,
           city: data.city,
           state: data.state,
