@@ -52,6 +52,16 @@ export interface VehicleDetails {
   transporter_name?: string
   transporter_phone?: string
   transporter_payment_date?: string
+  shipping_company_name?: string
+  shipping_line_id?: number
+  booking_number?: string
+  container_number?: string
+  receiving_company?: string
+  container_load_date?: string
+  planned_arrival_date?: string
+  container_entry_date?: string
+  container_open_date?: string
+  green_date?: string
 }
 
 export interface StatusHistoryEvent {
@@ -106,6 +116,16 @@ export interface VehicleFormValues {
   transporter_name: string
   transporter_phone: string
   transporter_payment_date: string
+  shipping_company_name: string
+  shipping_line_id: number
+  booking_number: string
+  container_number: string
+  receiving_company: string
+  container_load_date: string
+  planned_arrival_date: string
+  container_entry_date: string
+  container_open_date: string
+  green_date: string
 }
 
 export interface SectionsData {
@@ -114,4 +134,5 @@ export interface SectionsData {
   documents: any | null
   auction: any | null
   landTransport: any | null
+  seaTransport: any | null
 }

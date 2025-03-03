@@ -1,202 +1,118 @@
 
-import { supabase } from "@/integrations/supabase/client"
-import { VehicleFormValues, VehicleDetails } from "../types/vehicleTypes"
-import { useVehicleHistory } from "../hooks/useVehicleHistory"
+import { supabase } from "@/integrations/supabase/client";
+import { VehicleDetails, VehicleFormValues } from "../types/vehicleTypes";
 
 export const saveVehicleDetails = async (
   vehicle: VehicleDetails,
-  data: VehicleFormValues,
-  setVehicle: (vehicle: VehicleDetails) => void
+  formData: VehicleFormValues,
+  setVehicle: React.Dispatch<React.SetStateAction<VehicleDetails | null>>
 ) => {
-  const { addHistoryEvent } = useVehicleHistory(vehicle?.id || null)
-  
-  // Prepare vehicle data
-  const vehicleData = {
-    vin: data.vin,
-    lot_number: data.lot_number,
-    stock_number: data.stock_number,
-    year: data.year,
-    destination: data.destination,
-    client_name: data.client_name,
-    client_phone_number: data.client_phone_number,
-    client_passport_number: data.client_passport_number,
-    client_buyer_id: data.client_buyer_id,
-    address: data.address,
-    city: data.city,
-    state: data.state,
-    zip_code: data.zip_code,
-    receiver_port_id: data.receiver_port_id > 0 ? data.receiver_port_id : null,
-    warehouse_id: data.warehouse_id > 0 ? data.warehouse_id : null,
-    gate_pass_pin: data.gate_pass_pin,
-    is_sublot: data.is_sublot,
-    manufacturer_id: data.manufacturer_id > 0 ? data.manufacturer_id : null,
-    model_id: data.model_id > 0 ? data.model_id : null, 
-    generation_id: data.generation_id > 0 ? data.generation_id : null,
-    body_type_id: data.body_type_id > 0 ? data.body_type_id : null,
-    has_key: data.has_key,
-    highlights: data.highlights,
-    auction_id: data.auction_id > 0 ? data.auction_id : null,
-    auction_won_price: data.auction_won_price || null,
-    auction_final_price: data.auction_final_price || null,
-    auction_pay_date: data.auction_pay_date || null,
-    purchase_date: data.purchase_date || null,
-    dealer_id: data.dealer_id > 0 ? data.dealer_id : null,
-    sub_dealer_id: data.sub_dealer_id > 0 ? data.sub_dealer_id : null,
-    pay_due_date: data.pay_due_date || null
-  };
-  
-  // Update the vehicle record
-  const { error: vehicleError } = await supabase
+  // First, update the main vehicle details
+  const { data: updatedVehicle, error: vehicleError } = await supabase
     .from('vehicles')
-    .update(vehicleData)
+    .update({
+      vin: formData.vin,
+      lot_number: formData.lot_number,
+      stock_number: formData.stock_number,
+      year: formData.year,
+      destination: formData.destination,
+      client_name: formData.client_name,
+      client_phone_number: formData.client_phone_number,
+      client_passport_number: formData.client_passport_number,
+      client_buyer_id: formData.client_buyer_id,
+      address: formData.address,
+      city: formData.city,
+      state: formData.state,
+      zip_code: formData.zip_code,
+      receiver_port_id: formData.receiver_port_id || null,
+      warehouse_id: formData.warehouse_id || null,
+      gate_pass_pin: formData.gate_pass_pin,
+      is_sublot: formData.is_sublot,
+      manufacturer_id: formData.manufacturer_id || null,
+      model_id: formData.model_id || null,
+      generation_id: formData.generation_id || null,
+      body_type_id: formData.body_type_id || null,
+      has_key: formData.has_key,
+      highlights: formData.highlights,
+      auction_id: formData.auction_id || null,
+      dealer_id: formData.dealer_id || null,
+      sub_dealer_id: formData.sub_dealer_id || null,
+      pay_due_date: formData.pay_due_date || null,
+      auction_won_price: formData.auction_won_price || null,
+      auction_final_price: formData.auction_final_price || null,
+      auction_pay_date: formData.auction_pay_date || null,
+      purchase_date: formData.purchase_date || null,
+    })
     .eq('id', vehicle.id)
-  
+    .select()
+    .single();
+
   if (vehicleError) {
-    console.error('Supabase vehicle update error:', vehicleError);
-    throw vehicleError;
+    console.error('Error updating vehicle:', vehicleError);
+    throw new Error('Failed to update vehicle details');
   }
-  
-  // Prepare land transportation data
-  const landTransportData = {
-    vehicle_id: vehicle.id,
-    storage_start_date: data.storage_start_date || null,
-    pickup_date: data.pickup_date || null,
-    pickup_date_status: data.pickup_date_status || null,
-    delivery_date: data.delivery_date || null,
-    delivery_date_status: data.delivery_date_status || null,
-    transport_listed_price: data.transport_listed_price || null,
-    balance_payment_time: data.balance_payment_time || null,
-    balance_payment_method: data.balance_payment_method || null,
-    storage_fee: data.storage_fee || null,
-    company_name: data.company_name || null,
-    mc_number: data.mc_number || null,
-    transporter_name: data.transporter_name || null,
-    transporter_phone: data.transporter_phone || null,
-    transporter_payment_date: data.transporter_payment_date || null
-  };
-  
-  // Check if land transportation record exists
-  const { data: existingLandTransport, error: checkError } = await supabase
+
+  // Next, update or insert land transportation data
+  const { data: landTransportData, error: landTransportError } = await supabase
     .from('land_transportation')
-    .select('id')
-    .eq('vehicle_id', vehicle.id)
-    .maybeSingle();
-  
-  if (checkError) {
-    console.error('Error checking land transport data:', checkError);
+    .upsert({
+      vehicle_id: vehicle.id,
+      storage_start_date: formData.storage_start_date || null,
+      pickup_date: formData.pickup_date || null,
+      pickup_date_status: formData.pickup_date_status,
+      delivery_date: formData.delivery_date || null,
+      delivery_date_status: formData.delivery_date_status,
+      transport_listed_price: formData.transport_listed_price || null,
+      balance_payment_time: formData.balance_payment_time || null,
+      balance_payment_method: formData.balance_payment_method,
+      storage_fee: formData.storage_fee || null,
+      company_name: formData.company_name,
+      mc_number: formData.mc_number,
+      transporter_name: formData.transporter_name,
+      transporter_phone: formData.transporter_phone,
+      transporter_payment_date: formData.transporter_payment_date || null
+    }, { onConflict: 'vehicle_id' })
+    .select()
+    .single();
+
+  if (landTransportError && landTransportError.code !== 'PGRST116') {
+    console.error('Error updating land transportation:', landTransportError);
+    // Continue execution despite error
   }
-  
-  // Update or insert land transportation data
-  if (existingLandTransport) {
-    const { error: landTransportError } = await supabase
-      .from('land_transportation')
-      .update(landTransportData)
-      .eq('id', existingLandTransport.id);
-      
-    if (landTransportError) {
-      console.error('Land transportation update error:', landTransportError);
-      throw landTransportError;
-    }
-  } else {
-    // Only insert if we have some data to save
-    const hasLandTransportData = Object.values(landTransportData).some(value => 
-      value !== null && value !== '' && value !== 0);
-      
-    if (hasLandTransportData) {
-      const { error: landTransportError } = await supabase
-        .from('land_transportation')
-        .insert(landTransportData);
-        
-      if (landTransportError) {
-        console.error('Land transportation insert error:', landTransportError);
-        throw landTransportError;
-      }
-    }
+
+  // Update or insert sea transportation data
+  const { data: seaTransportData, error: seaTransportError } = await supabase
+    .from('sea_transportation')
+    .upsert({
+      vehicle_id: vehicle.id,
+      shipping_company_name: formData.shipping_company_name,
+      shipping_line_id: formData.shipping_line_id || null,
+      booking_number: formData.booking_number,
+      container_number: formData.container_number,
+      receiving_company: formData.receiving_company,
+      container_load_date: formData.container_load_date || null,
+      planned_arrival_date: formData.planned_arrival_date || null,
+      container_entry_date: formData.container_entry_date || null,
+      container_open_date: formData.container_open_date || null,
+      green_date: formData.green_date || null
+    }, { onConflict: 'vehicle_id' })
+    .select()
+    .single();
+
+  if (seaTransportError && seaTransportError.code !== 'PGRST116') {
+    console.error('Error updating sea transportation:', seaTransportError);
+    // Continue execution despite error
   }
-  
-  try {
-    await addHistoryEvent(vehicle.id, "Vehicle details updated")
-    
-    // Fetch the updated vehicle with related data
-    const { data: updatedVehicle, error: fetchError } = await supabase
-      .from('vehicles')
-      .select(`
-        id,
-        vin,
-        lot_number,
-        stock_number,
-        year,
-        destination,
-        client_name,
-        client_phone_number,
-        client_passport_number,
-        client_buyer_id,
-        address,
-        city,
-        state,
-        zip_code,
-        receiver_port_id,
-        warehouse_id,
-        gate_pass_pin,
-        is_sublot,
-        manufacturer_id,
-        model_id,
-        generation_id,
-        body_type_id,
-        has_key,
-        highlights,
-        auction_id,
-        dealer_id,
-        sub_dealer_id,
-        pay_due_date,
-        auction_won_price,
-        auction_final_price,
-        auction_pay_date,
-        purchase_date,
-        manufacturer:manufacturer_id(name),
-        model:model_id(name)
-      `)
-      .eq('id', vehicle.id)
-      .single()
-      
-    if (fetchError) throw fetchError
-    
-    // Get land transportation data
-    const { data: landTransportData, error: landTransportFetchError } = await supabase
-      .from('land_transportation')
-      .select(`
-        storage_start_date,
-        pickup_date,
-        pickup_date_status,
-        delivery_date,
-        delivery_date_status,
-        transport_listed_price,
-        balance_payment_time,
-        balance_payment_method,
-        storage_fee,
-        company_name,
-        mc_number,
-        transporter_name,
-        transporter_phone,
-        transporter_payment_date
-      `)
-      .eq('vehicle_id', vehicle.id)
-      .maybeSingle();
-      
-    if (landTransportFetchError) {
-      console.error('Error fetching updated land transport data:', landTransportFetchError);
-    }
-    
-    // Combine the data
-    const combinedData = {
-      ...updatedVehicle,
-      ...(landTransportData || {})
-    };
-    
-    setVehicle(combinedData)
-    return combinedData
-  } catch (historyError) {
-    console.error('Error updating history:', historyError)
-    throw historyError
-  }
-}
+
+  // Combine all data for state update
+  const combinedData = {
+    ...updatedVehicle,
+    ...(landTransportData || {}),
+    ...(seaTransportData || {})
+  };
+
+  // Update the vehicle state with the new data
+  setVehicle(combinedData);
+
+  return combinedData;
+};

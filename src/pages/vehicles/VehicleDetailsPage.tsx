@@ -1,4 +1,3 @@
-
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
@@ -15,6 +14,7 @@ import { useVehicleStatus } from "./hooks/useVehicleStatus"
 import { useSectionActions } from "./hooks/useSectionActions"
 import { saveVehicleDetails } from "./services/vehicleService"
 import { LandTransportationSection } from "./components/LandTransportationSection"
+import { SeaTransportationSection } from "./components/SeaTransportationSection"
 
 const VehicleDetailsPage = () => {
   const navigate = useNavigate()
@@ -108,6 +108,13 @@ const VehicleDetailsPage = () => {
             />
             
             <LandTransportationSection
+              form={form}
+              sectionsData={sectionsData}
+              addSection={addSection}
+              removeSection={removeSection}
+            />
+            
+            <SeaTransportationSection
               form={form}
               sectionsData={sectionsData}
               addSection={addSection}

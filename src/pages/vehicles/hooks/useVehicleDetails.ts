@@ -18,7 +18,8 @@ export const useVehicleDetails = () => {
     dealer: null,
     documents: null,
     auction: null,
-    landTransport: null
+    landTransport: null,
+    seaTransport: null
   })
 
   const form = useForm<VehicleFormValues>({
@@ -67,7 +68,17 @@ export const useVehicleDetails = () => {
       mc_number: "",
       transporter_name: "",
       transporter_phone: "",
-      transporter_payment_date: ""
+      transporter_payment_date: "",
+      shipping_company_name: "",
+      shipping_line_id: 0,
+      booking_number: "",
+      container_number: "",
+      receiving_company: "",
+      container_load_date: "",
+      planned_arrival_date: "",
+      container_entry_date: "",
+      container_open_date: "",
+      green_date: ""
     }
   })
 
@@ -147,10 +158,33 @@ export const useVehicleDetails = () => {
           console.error('Error fetching land transport data:', landTransportError)
         }
         
+        // Next, check if there's sea transportation data for this vehicle
+        const { data: seaTransportData, error: seaTransportError } = await supabase
+          .from('sea_transportation')
+          .select(`
+            shipping_company_name,
+            shipping_line_id,
+            booking_number,
+            container_number,
+            receiving_company,
+            container_load_date,
+            planned_arrival_date,
+            container_entry_date,
+            container_open_date,
+            green_date
+          `)
+          .eq('vehicle_id', parseInt(id))
+          .maybeSingle()
+        
+        if (seaTransportError) {
+          console.error('Error fetching sea transport data:', seaTransportError)
+        }
+        
         // Combine the data
         const combinedData = {
           ...vehicleData,
-          ...(landTransportData || {})
+          ...(landTransportData || {}),
+          ...(seaTransportData || {})
         }
         
         setVehicle(combinedData)
@@ -200,7 +234,17 @@ export const useVehicleDetails = () => {
           mc_number: combinedData.mc_number || "",
           transporter_name: combinedData.transporter_name || "",
           transporter_phone: combinedData.transporter_phone || "",
-          transporter_payment_date: combinedData.transporter_payment_date || ""
+          transporter_payment_date: combinedData.transporter_payment_date || "",
+          shipping_company_name: combinedData.shipping_company_name || "",
+          shipping_line_id: combinedData.shipping_line_id || 0,
+          booking_number: combinedData.booking_number || "",
+          container_number: combinedData.container_number || "",
+          receiving_company: combinedData.receiving_company || "",
+          container_load_date: combinedData.container_load_date || "",
+          planned_arrival_date: combinedData.planned_arrival_date || "",
+          container_entry_date: combinedData.container_entry_date || "",
+          container_open_date: combinedData.container_open_date || "",
+          green_date: combinedData.green_date || ""
         })
 
         // Initialize sections based on data presence
@@ -209,7 +253,8 @@ export const useVehicleDetails = () => {
           dealer: null, 
           documents: null,
           auction: null,
-          landTransport: null
+          landTransport: null,
+          seaTransport: null
         };
 
         if (combinedData.destination || combinedData.receiver_port_id || combinedData.warehouse_id) {
@@ -234,6 +279,14 @@ export const useVehicleDetails = () => {
             combinedData.transport_listed_price || combinedData.company_name || 
             combinedData.transporter_name || combinedData.balance_payment_method) {
           updatedSectionsData.landTransport = {};
+        }
+        
+        // Check if sea transport data exists
+        if (combinedData.shipping_company_name || combinedData.shipping_line_id || combinedData.booking_number ||
+            combinedData.container_number || combinedData.receiving_company || combinedData.container_load_date ||
+            combinedData.planned_arrival_date || combinedData.container_entry_date || combinedData.container_open_date ||
+            combinedData.green_date) {
+          updatedSectionsData.seaTransport = {};
         }
         
         setSectionsData(updatedSectionsData);
