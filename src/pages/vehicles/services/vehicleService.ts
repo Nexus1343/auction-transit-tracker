@@ -41,7 +41,21 @@ export const saveVehicleDetails = async (
     purchase_date: data.purchase_date || null,
     dealer_id: data.dealer_id > 0 ? data.dealer_id : null,
     sub_dealer_id: data.sub_dealer_id > 0 ? data.sub_dealer_id : null,
-    pay_due_date: data.pay_due_date || null
+    pay_due_date: data.pay_due_date || null,
+    storage_start_date: data.storage_start_date || null,
+    pickup_date: data.pickup_date || null,
+    pickup_date_status: data.pickup_date_status || null,
+    delivery_date: data.delivery_date || null,
+    delivery_date_status: data.delivery_date_status || null,
+    transport_listed_price: data.transport_listed_price || null,
+    balance_payment_time: data.balance_payment_time || null,
+    balance_payment_method: data.balance_payment_method || null,
+    storage_fee: data.storage_fee || null,
+    company_name: data.company_name || null,
+    mc_number: data.mc_number || null,
+    transporter_name: data.transporter_name || null,
+    transporter_phone: data.transporter_phone || null,
+    transporter_payment_date: data.transporter_payment_date || null
   };
   
   const { error } = await supabase
@@ -92,6 +106,20 @@ export const saveVehicleDetails = async (
         auction_final_price,
         auction_pay_date,
         purchase_date,
+        storage_start_date,
+        pickup_date,
+        pickup_date_status,
+        delivery_date,
+        delivery_date_status,
+        transport_listed_price,
+        balance_payment_time,
+        balance_payment_method,
+        storage_fee,
+        company_name,
+        mc_number,
+        transporter_name,
+        transporter_phone,
+        transporter_payment_date,
         manufacturer:manufacturer_id(name),
         model:model_id(name)
       `)

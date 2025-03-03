@@ -13,68 +13,66 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
-export const useAuctionClosing = (
+export const useLandTransportClosing = (
   form: UseFormReturn<VehicleFormValues>,
   removeSection: (section: keyof SectionsData) => void
 ) => {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const { toast } = useToast();
 
-  // Fields that are part of the auction section
-  const auctionFields = [
-    'auction_id',
-    'lot_number',
-    'address',
-    'city',
-    'state',
-    'zip_code',
-    'gate_pass_pin',
-    'is_sublot',
+  // Fields that are part of the land transportation section
+  const landTransportFields = [
+    'storage_start_date',
+    'pickup_date',
+    'pickup_date_status',
+    'delivery_date',
+    'delivery_date_status',
+    'transport_listed_price',
+    'balance_payment_time',
+    'balance_payment_method',
+    'storage_fee',
+    'company_name',
+    'mc_number',
+    'transporter_name',
+    'transporter_phone',
+    'transporter_payment_date',
     'receiver_port_id',
     'warehouse_id',
-    'destination',
-    'purchase_date',
-    'auction_won_price',
-    'auction_final_price',
-    'auction_pay_date'
+    'destination'
   ] as const;
 
-  // Check if any auction fields have data
-  const hasAuctionData = () => {
+  // Check if any land transportation fields have data
+  const hasLandTransportData = () => {
     const values = form.getValues();
-    return auctionFields.some(field => {
+    return landTransportFields.some(field => {
       const value = values[field];
       if (typeof value === 'string') return value.trim() !== '';
       if (typeof value === 'number') return value !== 0;
-      if (typeof value === 'boolean') return value === true;
       return false;
     });
   };
 
   const confirmClose = (section: keyof SectionsData) => {
-    if (section !== 'auction') {
+    if (section !== 'landTransport') {
       removeSection(section);
       return;
     }
 
-    if (hasAuctionData()) {
+    if (hasLandTransportData()) {
       setIsConfirmOpen(true);
     } else {
-      removeSection('auction');
+      removeSection('landTransport');
     }
   };
 
   const handleConfirmClose = () => {
-    // Reset auction fields
+    // Reset land transportation fields
     const defaultValues: Partial<VehicleFormValues> = {};
     
-    auctionFields.forEach(field => {
-      if (['auction_id', 'receiver_port_id', 'warehouse_id', 'auction_won_price', 'auction_final_price'].includes(field)) {
+    landTransportFields.forEach(field => {
+      if (['receiver_port_id', 'warehouse_id', 'transport_listed_price', 'storage_fee'].includes(field)) {
         // For numeric fields
         defaultValues[field] = 0;
-      } else if (field === 'is_sublot') {
-        // For boolean fields
-        defaultValues[field] = false;
       } else {
         // For string fields
         defaultValues[field] = '';
@@ -82,12 +80,12 @@ export const useAuctionClosing = (
     });
 
     form.reset({ ...form.getValues(), ...defaultValues });
-    removeSection('auction');
+    removeSection('landTransport');
     setIsConfirmOpen(false);
     
     toast({
-      title: "Auction Information Cleared",
-      description: "The auction information has been reset and the section closed."
+      title: "Land Transportation Information Cleared",
+      description: "The land transportation information has been reset and the section closed."
     });
   };
 
@@ -97,8 +95,8 @@ export const useAuctionClosing = (
         <DialogHeader>
           <DialogTitle>Confirm Close</DialogTitle>
           <DialogDescription>
-            You have unsaved auction information. Are you sure you want to close this section? 
-            All entered auction data will be lost.
+            You have unsaved land transportation information. Are you sure you want to close this section? 
+            All entered land transportation data will be lost.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex justify-between sm:justify-between">

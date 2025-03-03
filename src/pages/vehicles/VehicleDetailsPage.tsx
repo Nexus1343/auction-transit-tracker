@@ -14,7 +14,7 @@ import { useVehicleDetails } from "./hooks/useVehicleDetails"
 import { useVehicleStatus } from "./hooks/useVehicleStatus"
 import { useSectionActions } from "./hooks/useSectionActions"
 import { saveVehicleDetails } from "./services/vehicleService"
-import { useAuctionClosing } from "./hooks/useAuctionClosing"
+import { LandTransportationSection } from "./components/LandTransportationSection"
 
 const VehicleDetailsPage = () => {
   const navigate = useNavigate()
@@ -101,6 +101,13 @@ const VehicleDetailsPage = () => {
             />
             
             <DealerSection 
+              form={form}
+              sectionsData={sectionsData}
+              addSection={addSection}
+              removeSection={removeSection}
+            />
+            
+            <LandTransportationSection
               form={form}
               sectionsData={sectionsData}
               addSection={addSection}

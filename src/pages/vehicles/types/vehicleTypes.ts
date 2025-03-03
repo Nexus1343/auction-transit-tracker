@@ -38,6 +38,20 @@ export interface VehicleDetails {
   auction_final_price?: number
   auction_pay_date?: string
   purchase_date?: string
+  storage_start_date?: string
+  pickup_date?: string
+  pickup_date_status?: string
+  delivery_date?: string
+  delivery_date_status?: string
+  transport_listed_price?: number
+  balance_payment_time?: string
+  balance_payment_method?: string
+  storage_fee?: number
+  company_name?: string
+  mc_number?: string
+  transporter_name?: string
+  transporter_phone?: string
+  transporter_payment_date?: string
 }
 
 export interface StatusHistoryEvent {
@@ -78,6 +92,20 @@ export interface VehicleFormValues {
   auction_final_price: number
   auction_pay_date: string
   purchase_date: string
+  storage_start_date: string
+  pickup_date: string
+  pickup_date_status: string
+  delivery_date: string
+  delivery_date_status: string
+  transport_listed_price: number
+  balance_payment_time: string
+  balance_payment_method: string
+  storage_fee: number
+  company_name: string
+  mc_number: string
+  transporter_name: string
+  transporter_phone: string
+  transporter_payment_date: string
 }
 
 export interface SectionsData {
@@ -85,4 +113,5 @@ export interface SectionsData {
   dealer: any | null
   documents: any | null
   auction: any | null
+  landTransport: any | null
 }

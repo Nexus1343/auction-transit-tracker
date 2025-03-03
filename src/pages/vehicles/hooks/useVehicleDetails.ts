@@ -17,7 +17,8 @@ export const useVehicleDetails = () => {
     transport: null,
     dealer: null,
     documents: null,
-    auction: null
+    auction: null,
+    landTransport: null
   })
 
   const form = useForm<VehicleFormValues>({
@@ -52,7 +53,21 @@ export const useVehicleDetails = () => {
       auction_won_price: 0,
       auction_final_price: 0,
       auction_pay_date: "",
-      purchase_date: ""
+      purchase_date: "",
+      storage_start_date: "",
+      pickup_date: "",
+      pickup_date_status: "",
+      delivery_date: "",
+      delivery_date_status: "",
+      transport_listed_price: 0,
+      balance_payment_time: "",
+      balance_payment_method: "",
+      storage_fee: 0,
+      company_name: "",
+      mc_number: "",
+      transporter_name: "",
+      transporter_phone: "",
+      transporter_payment_date: ""
     }
   })
 
@@ -97,6 +112,20 @@ export const useVehicleDetails = () => {
             auction_final_price,
             auction_pay_date,
             purchase_date,
+            storage_start_date,
+            pickup_date,
+            pickup_date_status,
+            delivery_date,
+            delivery_date_status,
+            transport_listed_price,
+            balance_payment_time,
+            balance_payment_method,
+            storage_fee,
+            company_name,
+            mc_number,
+            transporter_name,
+            transporter_phone,
+            transporter_payment_date,
             manufacturer:manufacturer_id(name),
             model:model_id(name)
           `)
@@ -138,7 +167,21 @@ export const useVehicleDetails = () => {
           auction_won_price: data.auction_won_price || 0,
           auction_final_price: data.auction_final_price || 0,
           auction_pay_date: data.auction_pay_date || "",
-          purchase_date: data.purchase_date || ""
+          purchase_date: data.purchase_date || "",
+          storage_start_date: data.storage_start_date || "",
+          pickup_date: data.pickup_date || "",
+          pickup_date_status: data.pickup_date_status || "",
+          delivery_date: data.delivery_date || "",
+          delivery_date_status: data.delivery_date_status || "",
+          transport_listed_price: data.transport_listed_price || 0,
+          balance_payment_time: data.balance_payment_time || "",
+          balance_payment_method: data.balance_payment_method || "",
+          storage_fee: data.storage_fee || 0,
+          company_name: data.company_name || "",
+          mc_number: data.mc_number || "",
+          transporter_name: data.transporter_name || "",
+          transporter_phone: data.transporter_phone || "",
+          transporter_payment_date: data.transporter_payment_date || ""
         })
 
         // Initialize sections based on data presence
@@ -146,7 +189,8 @@ export const useVehicleDetails = () => {
           transport: null,
           dealer: null, 
           documents: null,
-          auction: null
+          auction: null,
+          landTransport: null
         };
 
         if (data.destination) {
@@ -162,6 +206,12 @@ export const useVehicleDetails = () => {
         if (data.auction_id || data.lot_number || data.address || data.purchase_date || 
             data.auction_won_price || data.auction_final_price || data.auction_pay_date) {
           updatedSectionsData.auction = {};
+        }
+        
+        // Check if land transport data exists
+        if (data.storage_start_date || data.pickup_date || data.delivery_date || 
+            data.transport_listed_price || data.company_name || data.transporter_name) {
+          updatedSectionsData.landTransport = {};
         }
         
         setSectionsData(updatedSectionsData);
