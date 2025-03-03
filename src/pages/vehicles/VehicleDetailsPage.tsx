@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
@@ -50,7 +49,6 @@ interface VehicleDetails {
   warehouse_id?: number
   gate_pass_pin?: string
   is_sublot?: boolean
-  // Add other fields as needed
 }
 
 interface StatusHistoryEvent {
@@ -68,7 +66,6 @@ const VehicleDetailsPage = () => {
   const { toast } = useToast()
   const [history, setHistory] = useState<StatusHistoryEvent[]>([])
   
-  // Status tracking
   const statuses = [
     'At Auction',
     'Ready to List',
@@ -85,7 +82,6 @@ const VehicleDetailsPage = () => {
   
   const [currentStatus, setCurrentStatus] = useState(statuses[0])
   
-  // Section management
   const [sectionsData, setSectionsData] = useState({
     transport: null,
     dealer: null,
@@ -149,7 +145,6 @@ const VehicleDetailsPage = () => {
         
         setVehicle(data)
         
-        // Set form default values
         form.reset({
           vin: data.vin || "",
           lot_number: data.lot_number || "",
@@ -169,7 +164,6 @@ const VehicleDetailsPage = () => {
           is_sublot: data.is_sublot || false
         })
 
-        // Load section data based on whether relevant fields have data
         if (data.destination) {
           setSectionsData(prev => ({...prev, transport: {}}))
         }
@@ -178,8 +172,7 @@ const VehicleDetailsPage = () => {
           setSectionsData(prev => ({...prev, dealer: {}}))
         }
         
-        // Fetch vehicle history
-        const { data: historyData, error: historyError } = await supabase
+        supabase
           .from('vehicle_status_history')
           .select(`
             id,
@@ -190,15 +183,19 @@ const VehicleDetailsPage = () => {
           `)
           .eq('vehicle_id', parseInt(id))
           .order('created_at', { ascending: false })
-        
-        if (!historyError && historyData) {
-          const formattedHistory = historyData.map(item => ({
-            date: new Date(item.created_at).toLocaleString(),
-            user: "Admin", // Replace with actual user when available
-            action: item.notes || "Status updated"
-          }))
-          setHistory(formattedHistory)
-        }
+          .then(({ data: historyData, error: historyError }) => {
+            if (!historyError && historyData) {
+              const formattedHistory = historyData.map(item => ({
+                date: new Date(item.created_at).toLocaleString(),
+                user: "Admin", // Replace with actual user when available
+                action: item.notes || "Status updated"
+              }))
+              setHistory(formattedHistory)
+            }
+          })
+          .catch(error => {
+            console.error('Error fetching history:', error)
+          })
         
       } catch (error) {
         console.error('Error fetching vehicle details:', error)
@@ -244,7 +241,6 @@ const VehicleDetailsPage = () => {
       
       if (error) throw error
       
-      // Add to history
       await supabase
         .from('vehicle_status_history')
         .insert({
@@ -255,9 +251,9 @@ const VehicleDetailsPage = () => {
         .then(({ data, error }) => {
           if (error) {
             console.error('Error updating history:', error)
+            return null
           }
           
-          // Refresh history
           return supabase
             .from('vehicle_status_history')
             .select(`
@@ -270,7 +266,11 @@ const VehicleDetailsPage = () => {
             .eq('vehicle_id', vehicle.id)
             .order('created_at', { ascending: false })
         })
-        .then(({ data: historyData, error: historyError }) => {
+        .then(result => {
+          if (!result) return
+          
+          const { data: historyData, error: historyError } = result
+          
           if (historyError) {
             console.error('Error refreshing history:', historyError)
             return
@@ -306,14 +306,12 @@ const VehicleDetailsPage = () => {
     }
   }
 
-  // Status management functions
   const updateStatus = async (newStatus: string) => {
     if (!vehicle) return
 
     setCurrentStatus(newStatus)
     
     try {
-      // Add to history
       await supabase
         .from('vehicle_status_history')
         .insert({
@@ -324,9 +322,9 @@ const VehicleDetailsPage = () => {
         .then(({ data, error }) => {
           if (error) {
             console.error('Error updating history:', error)
+            return null
           }
           
-          // Refresh history
           return supabase
             .from('vehicle_status_history')
             .select(`
@@ -339,7 +337,11 @@ const VehicleDetailsPage = () => {
             .eq('vehicle_id', vehicle.id)
             .order('created_at', { ascending: false })
         })
-        .then(({ data: historyData, error: historyError }) => {
+        .then(result => {
+          if (!result) return
+          
+          const { data: historyData, error: historyError } = result
+          
           if (historyError) {
             console.error('Error refreshing history:', historyError)
             return
@@ -377,7 +379,6 @@ const VehicleDetailsPage = () => {
     return ((currentIndex + 1) / statuses.length) * 100;
   }
 
-  // Section management functions
   const addSection = (section: keyof typeof sectionsData) => {
     setSectionsData(prev => ({
       ...prev,
@@ -385,7 +386,6 @@ const VehicleDetailsPage = () => {
     }));
     
     if (vehicle) {
-      // Add to history
       supabase
         .from('vehicle_status_history')
         .insert({
@@ -399,7 +399,6 @@ const VehicleDetailsPage = () => {
             return null
           }
           
-          // Refresh history after adding
           return supabase
             .from('vehicle_status_history')
             .select(`
@@ -444,7 +443,6 @@ const VehicleDetailsPage = () => {
     }));
     
     if (vehicle) {
-      // Add to history
       supabase
         .from('vehicle_status_history')
         .insert({
@@ -458,7 +456,6 @@ const VehicleDetailsPage = () => {
             return null
           }
           
-          // Refresh history after adding
           return supabase
             .from('vehicle_status_history')
             .select(`
@@ -534,7 +531,6 @@ const VehicleDetailsPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Status Header */}
       <div className="bg-white border-b sticky top-0 z-10">
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
@@ -563,7 +559,6 @@ const VehicleDetailsPage = () => {
             </div>
           </div>
 
-          {/* Status Progress */}
           <div className="mt-6 mb-4">
             <div className="relative">
               <div className="h-2 bg-gray-200 rounded-full">
@@ -604,11 +599,9 @@ const VehicleDetailsPage = () => {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="max-w-5xl mx-auto p-6 space-y-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
-            {/* Vehicle Details Section */}
             <div className="bg-white rounded-lg shadow mb-6">
               <div className="p-6">
                 <h2 className="text-lg font-semibold mb-6 flex items-center">
@@ -709,7 +702,6 @@ const VehicleDetailsPage = () => {
               </div>
             </div>
 
-            {/* Auction Location Section */}
             <div className="bg-white rounded-lg shadow mb-6">
               <div className="p-6">
                 <h2 className="text-lg font-semibold mb-6 flex items-center">
@@ -887,7 +879,6 @@ const VehicleDetailsPage = () => {
               </div>
             </div>
 
-            {/* Transport Section */}
             <div className="bg-white rounded-lg shadow mb-6">
               <div className="p-6">
                 <h2 className="text-lg font-semibold flex items-center">
@@ -939,7 +930,6 @@ const VehicleDetailsPage = () => {
               </div>
             </div>
 
-            {/* Dealer Section */}
             <div className="bg-white rounded-lg shadow mb-6">
               <div className="p-6">
                 <h2 className="text-lg font-semibold flex items-center">
@@ -1029,7 +1019,6 @@ const VehicleDetailsPage = () => {
               </div>
             </div>
 
-            {/* Documents Section */}
             <div className="bg-white rounded-lg shadow mb-6">
               <div className="p-6">
                 <h2 className="text-lg font-semibold flex items-center">
@@ -1068,7 +1057,6 @@ const VehicleDetailsPage = () => {
               </div>
             </div>
 
-            {/* Submit button */}
             <div className="flex justify-end mb-6">
               <Button type="submit" disabled={isSaving}>
                 {isSaving ? "Saving..." : "Save Changes"}
@@ -1077,7 +1065,6 @@ const VehicleDetailsPage = () => {
           </form>
         </Form>
 
-        {/* History Section */}
         <div className="bg-white rounded-lg shadow">
           <div className="p-6">
             <h2 className="text-lg font-semibold flex items-center mb-4">
@@ -1117,4 +1104,3 @@ const VehicleDetailsPage = () => {
 }
 
 export default VehicleDetailsPage
-
