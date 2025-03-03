@@ -1,3 +1,4 @@
+
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
@@ -15,6 +16,10 @@ import { useSectionActions } from "./hooks/useSectionActions"
 import { saveVehicleDetails } from "./services/vehicleService"
 import { LandTransportationSection } from "./components/LandTransportationSection"
 import { SeaTransportationSection } from "./components/SeaTransportationSection"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+
+// Create a client
+const queryClient = new QueryClient()
 
 const VehicleDetailsPage = () => {
   const navigate = useNavigate()
@@ -142,4 +147,11 @@ const VehicleDetailsPage = () => {
   )
 }
 
-export default VehicleDetailsPage
+// Wrap the component with QueryClientProvider
+const VehicleDetailsPageWithQueryClient = () => (
+  <QueryClientProvider client={queryClient}>
+    <VehicleDetailsPage />
+  </QueryClientProvider>
+)
+
+export default VehicleDetailsPageWithQueryClient

@@ -1,17 +1,47 @@
 
+import { useEffect } from "react"
 import { Car, Camera } from "lucide-react"
 import { FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { UseFormReturn } from "react-hook-form"
 import { VehicleFormValues } from "../types/vehicleTypes"
+import { useManufacturers } from "../hooks/useManufacturers"
+import { useModels } from "../hooks/useModels"
+import { useGenerations } from "../hooks/useGenerations"
+import { useBodyTypes } from "../hooks/useBodyTypes"
 
 interface VehicleBasicInfoProps {
   form: UseFormReturn<VehicleFormValues>
 }
 
 export const VehicleBasicInfo = ({ form }: VehicleBasicInfoProps) => {
+  const { data: manufacturers = [], isLoading: isLoadingManufacturers } = useManufacturers()
+  const { data: bodyTypes = [], isLoading: isLoadingBodyTypes } = useBodyTypes()
+  
+  const manufacturerId = form.watch("manufacturer_id")
+  const { data: models = [], isLoading: isLoadingModels } = useModels(manufacturerId || null)
+  
+  const modelId = form.watch("model_id")
+  const { data: generations = [], isLoading: isLoadingGenerations } = useGenerations(modelId || null)
+  
+  // Reset model and generation when manufacturer changes
+  useEffect(() => {
+    if (manufacturerId) {
+      form.setValue("model_id", 0)
+      form.setValue("generation_id", 0)
+    }
+  }, [manufacturerId, form])
+  
+  // Reset generation when model changes
+  useEffect(() => {
+    if (modelId) {
+      form.setValue("generation_id", 0)
+    }
+  }, [modelId, form])
+
   return (
     <div className="bg-white rounded-lg shadow mb-6">
       <div className="p-6">
@@ -88,15 +118,25 @@ export const VehicleBasicInfo = ({ form }: VehicleBasicInfoProps) => {
                     <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
                       Manufacturer
                     </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        {...field}
-                        onChange={e => field.onChange(parseInt(e.target.value) || 0)}
-                        placeholder="Manufacturer ID"
-                        className="w-full p-2 border rounded-lg"
-                      />
-                    </FormControl>
+                    <Select
+                      value={field.value ? field.value.toString() : ""}
+                      onValueChange={(value) => field.onChange(parseInt(value) || 0)}
+                      disabled={isLoadingManufacturers}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select manufacturer" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="0">Select manufacturer</SelectItem>
+                        {manufacturers.map((manufacturer) => (
+                          <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
+                            {manufacturer.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </FormItem>
                 )}
               />
@@ -111,15 +151,25 @@ export const VehicleBasicInfo = ({ form }: VehicleBasicInfoProps) => {
                     <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
                       Model
                     </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        {...field}
-                        onChange={e => field.onChange(parseInt(e.target.value) || 0)}
-                        placeholder="Model ID"
-                        className="w-full p-2 border rounded-lg"
-                      />
-                    </FormControl>
+                    <Select
+                      value={field.value ? field.value.toString() : ""}
+                      onValueChange={(value) => field.onChange(parseInt(value) || 0)}
+                      disabled={isLoadingModels || !manufacturerId}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select model" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="0">Select model</SelectItem>
+                        {models.map((model) => (
+                          <SelectItem key={model.id} value={model.id.toString()}>
+                            {model.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </FormItem>
                 )}
               />
@@ -131,15 +181,25 @@ export const VehicleBasicInfo = ({ form }: VehicleBasicInfoProps) => {
                     <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
                       Generation
                     </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        {...field}
-                        onChange={e => field.onChange(parseInt(e.target.value) || 0)}
-                        placeholder="Generation ID"
-                        className="w-full p-2 border rounded-lg"
-                      />
-                    </FormControl>
+                    <Select
+                      value={field.value ? field.value.toString() : ""}
+                      onValueChange={(value) => field.onChange(parseInt(value) || 0)}
+                      disabled={isLoadingGenerations || !modelId}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select generation" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="0">Select generation</SelectItem>
+                        {generations.map((generation) => (
+                          <SelectItem key={generation.id} value={generation.id.toString()}>
+                            {generation.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </FormItem>
                 )}
               />
@@ -154,15 +214,25 @@ export const VehicleBasicInfo = ({ form }: VehicleBasicInfoProps) => {
                     <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
                       Body Type
                     </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        {...field}
-                        onChange={e => field.onChange(parseInt(e.target.value) || 0)}
-                        placeholder="Body Type ID"
-                        className="w-full p-2 border rounded-lg"
-                      />
-                    </FormControl>
+                    <Select
+                      value={field.value ? field.value.toString() : ""}
+                      onValueChange={(value) => field.onChange(parseInt(value) || 0)}
+                      disabled={isLoadingBodyTypes}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select body type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="0">Select body type</SelectItem>
+                        {bodyTypes.map((bodyType) => (
+                          <SelectItem key={bodyType.id} value={bodyType.id.toString()}>
+                            {bodyType.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </FormItem>
                 )}
               />
