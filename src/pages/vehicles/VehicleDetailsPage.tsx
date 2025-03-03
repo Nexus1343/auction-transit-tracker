@@ -79,7 +79,6 @@ const VehicleDetailsPage = () => {
     }
   })
   
-  // Use the custom hook for history management
   const { history, addHistoryEvent } = useVehicleHistory(vehicle?.id || null)
   
   useEffect(() => {
@@ -133,7 +132,6 @@ const VehicleDetailsPage = () => {
         
         setVehicle(data)
         
-        // Set form values from the fetched data
         form.reset({
           vin: data.vin || "",
           lot_number: data.lot_number || "",
@@ -198,8 +196,6 @@ const VehicleDetailsPage = () => {
     try {
       console.log("Saving data:", data);
       
-      // Make explicit data object to ensure all fields are included
-      // Convert ID values of 0 to null to avoid foreign key constraint errors
       const updateData = {
         vin: data.vin,
         lot_number: data.lot_number,
@@ -210,7 +206,6 @@ const VehicleDetailsPage = () => {
         client_phone_number: data.client_phone_number,
         client_passport_number: data.client_passport_number,
         client_buyer_id: data.client_buyer_id,
-        // Auction Location fields
         address: data.address,
         city: data.city,
         state: data.state,
@@ -219,21 +214,17 @@ const VehicleDetailsPage = () => {
         warehouse_id: data.warehouse_id > 0 ? data.warehouse_id : null,
         gate_pass_pin: data.gate_pass_pin,
         is_sublot: data.is_sublot,
-        // Added vehicle fields
         manufacturer_id: data.manufacturer_id > 0 ? data.manufacturer_id : null,
         model_id: data.model_id > 0 ? data.model_id : null, 
         generation_id: data.generation_id > 0 ? data.generation_id : null,
         body_type_id: data.body_type_id > 0 ? data.body_type_id : null,
         has_key: data.has_key,
         highlights: data.highlights,
-        // Auction fields
         auction_id: data.auction_id > 0 ? data.auction_id : null,
-        // Purchase fields
         auction_won_price: data.auction_won_price || null,
         auction_final_price: data.auction_final_price || null,
         auction_pay_date: data.auction_pay_date || null,
         purchase_date: data.purchase_date || null,
-        // Dealer fields
         dealer_id: data.dealer_id > 0 ? data.dealer_id : null,
         sub_dealer_id: data.sub_dealer_id > 0 ? data.sub_dealer_id : null,
         pay_due_date: data.pay_due_date || null
@@ -252,7 +243,6 @@ const VehicleDetailsPage = () => {
       try {
         await addHistoryEvent(vehicle.id, "Vehicle details updated")
         
-        // Fetch the updated vehicle data to update our local state
         const { data: updatedVehicle, error: fetchError } = await supabase
           .from('vehicles')
           .select(`
@@ -296,7 +286,6 @@ const VehicleDetailsPage = () => {
           
         if (fetchError) throw fetchError
           
-        // Update the vehicle state with fresh data
         setVehicle(updatedVehicle)
       } catch (historyError) {
         console.error('Error updating history:', historyError)
@@ -406,7 +395,7 @@ const VehicleDetailsPage = () => {
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <VehicleBasicInfo form={form} />
             <AuctionSection form={form} />
-            <DealerClientSection 
+            <DealerSection 
               form={form}
               sectionsData={sectionsData}
               addSection={addSection}
