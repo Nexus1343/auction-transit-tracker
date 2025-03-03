@@ -38,7 +38,9 @@ const VehicleDetailsPage = () => {
   
   const {
     currentStatus,
+    currentStatusId,
     statuses,
+    isLoadingStatuses,
     updateStatus,
     getProgressPercentage
   } = useVehicleStatus(vehicle)
@@ -88,7 +90,9 @@ const VehicleDetailsPage = () => {
       <VehicleHeader
         vehicle={vehicle}
         currentStatus={currentStatus}
+        currentStatusId={currentStatusId}
         statuses={statuses}
+        isLoadingStatuses={isLoadingStatuses}
         updateStatus={updateStatus}
         getProgressPercentage={getProgressPercentage}
       />

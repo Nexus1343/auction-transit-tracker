@@ -62,6 +62,7 @@ export const useVehicleData = () => {
             auction_final_price,
             auction_pay_date,
             purchase_date,
+            current_status_id,
             manufacturer:manufacturer_id(name),
             model:model_id(name)
           `)
