@@ -105,6 +105,7 @@ const VehicleDetailsPage = () => {
         
         setVehicle(data)
         
+        // Set form values from the fetched data
         form.reset({
           vin: data.vin || "",
           lot_number: data.lot_number || "",
@@ -148,35 +149,42 @@ const VehicleDetailsPage = () => {
   }, [id, toast, form])
 
   const onSubmit = async (data: VehicleFormValues) => {
-    if (!vehicle) return
+    if (!vehicle || !id) return
     
     setIsSaving(true)
     try {
       console.log("Saving data:", data);
+      
+      // Make explicit data object to ensure all fields are included
+      const updateData = {
+        vin: data.vin,
+        lot_number: data.lot_number,
+        stock_number: data.stock_number,
+        year: data.year,
+        destination: data.destination,
+        client_name: data.client_name,
+        client_phone_number: data.client_phone_number,
+        client_passport_number: data.client_passport_number,
+        // Auction Location fields
+        address: data.address,
+        city: data.city,
+        state: data.state,
+        zip_code: data.zip_code,
+        receiver_port_id: data.receiver_port_id,
+        warehouse_id: data.warehouse_id,
+        gate_pass_pin: data.gate_pass_pin,
+        is_sublot: data.is_sublot
+      };
+      
       const { error } = await supabase
         .from('vehicles')
-        .update({
-          vin: data.vin,
-          lot_number: data.lot_number,
-          stock_number: data.stock_number,
-          year: data.year,
-          destination: data.destination,
-          client_name: data.client_name,
-          client_phone_number: data.client_phone_number,
-          client_passport_number: data.client_passport_number,
-          // Make sure these Auction Location fields are included in the update
-          address: data.address,
-          city: data.city,
-          state: data.state,
-          zip_code: data.zip_code,
-          receiver_port_id: data.receiver_port_id,
-          warehouse_id: data.warehouse_id,
-          gate_pass_pin: data.gate_pass_pin,
-          is_sublot: data.is_sublot
-        })
+        .update(updateData)
         .eq('id', vehicle.id)
       
-      if (error) throw error
+      if (error) {
+        console.error('Supabase update error:', error);
+        throw error;
+      }
       
       try {
         await addHistoryEvent(vehicle.id, "Vehicle details updated")
