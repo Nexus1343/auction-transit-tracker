@@ -1,57 +1,72 @@
 
-import { Car, Camera } from "lucide-react"
+import { Users } from "lucide-react"
 import { FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Checkbox } from "@/components/ui/checkbox"
 import { UseFormReturn } from "react-hook-form"
-import { VehicleFormValues } from "../types/vehicleTypes"
+import { SectionsData, VehicleFormValues } from "../types/vehicleTypes"
+import { SectionWrapper } from "./SectionWrapper"
 
-interface VehicleBasicInfoProps {
+interface DealerClientSectionProps {
   form: UseFormReturn<VehicleFormValues>
+  sectionsData: SectionsData
+  addSection: (section: keyof SectionsData) => void
+  removeSection: (section: keyof SectionsData) => void
 }
 
-export const VehicleBasicInfo = ({ form }: VehicleBasicInfoProps) => {
+export const DealerClientSection = ({ 
+  form, 
+  sectionsData, 
+  addSection, 
+  removeSection 
+}: DealerClientSectionProps) => {
   return (
     <div className="bg-white rounded-lg shadow mb-6">
       <div className="p-6">
         <h2 className="text-lg font-semibold mb-6 flex items-center">
-          <Car className="w-5 h-5 text-gray-500 mr-2" />
-          Vehicle Details
+          <Users className="w-5 h-5 text-gray-500 mr-2" />
+          Dealer
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+        
+        {/* Dealer Subsection */}
+        <div className="mb-6">
+          <h3 className="text-md font-medium mb-4 border-b pb-2">Dealer Information</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
               <FormField
                 control={form.control}
-                name="stock_number"
+                name="dealer_id"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
-                      Stock #
+                      Dealer
                     </FormLabel>
                     <FormControl>
                       <Input
+                        type="number"
                         {...field}
-                        placeholder="Stock number"
+                        onChange={e => field.onChange(parseInt(e.target.value) || 0)}
+                        placeholder="Dealer ID"
                         className="w-full p-2 border rounded-lg"
                       />
                     </FormControl>
                   </FormItem>
                 )}
               />
+              
               <FormField
                 control={form.control}
-                name="vin"
+                name="sub_dealer_id"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
-                      VIN
+                      Sub-Dealer
                     </FormLabel>
                     <FormControl>
                       <Input
+                        type="number"
                         {...field}
-                        placeholder="Vehicle VIN"
+                        onChange={e => field.onChange(parseInt(e.target.value) || 0)}
+                        placeholder="Sub-Dealer ID"
                         className="w-full p-2 border rounded-lg"
                       />
                     </FormControl>
@@ -59,41 +74,19 @@ export const VehicleBasicInfo = ({ form }: VehicleBasicInfoProps) => {
                 )}
               />
             </div>
-
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4">
               <FormField
                 control={form.control}
-                name="year"
+                name="pay_due_date"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
-                      Year
+                      Pay Due Date
                     </FormLabel>
                     <FormControl>
                       <Input
+                        type="date"
                         {...field}
-                        type="number"
-                        className="w-full p-2 border rounded-lg"
-                        onChange={e => field.onChange(parseInt(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="manufacturer_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
-                      Manufacturer
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        {...field}
-                        onChange={e => field.onChange(parseInt(e.target.value) || 0)}
-                        placeholder="Manufacturer ID"
                         className="w-full p-2 border rounded-lg"
                       />
                     </FormControl>
@@ -101,127 +94,91 @@ export const VehicleBasicInfo = ({ form }: VehicleBasicInfoProps) => {
                 )}
               />
             </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="model_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
-                      Model
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        {...field}
-                        onChange={e => field.onChange(parseInt(e.target.value) || 0)}
-                        placeholder="Model ID"
-                        className="w-full p-2 border rounded-lg"
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="generation_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
-                      Generation
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        {...field}
-                        onChange={e => field.onChange(parseInt(e.target.value) || 0)}
-                        placeholder="Generation ID"
-                        className="w-full p-2 border rounded-lg"
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="body_type_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
-                      Body Type
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        {...field}
-                        onChange={e => field.onChange(parseInt(e.target.value) || 0)}
-                        placeholder="Body Type ID"
-                        className="w-full p-2 border rounded-lg"
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="has_key"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
-                      Has Key
-                    </FormLabel>
-                    <FormControl>
-                      <div className="flex items-center h-10 mt-2">
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          id="has-key"
-                        />
-                        <label
-                          htmlFor="has-key"
-                          className="ml-2 text-sm text-gray-600"
-                        >
-                          Yes
-                        </label>
-                      </div>
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="highlights"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
-                    Highlights
-                  </FormLabel>
-                  <FormControl>
-                    <Textarea
-                      {...field}
-                      placeholder="Vehicle highlights..."
-                      className="w-full p-2 border rounded-lg"
-                      rows={4}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
           </div>
-          <div className="border-2 border-dashed rounded-lg p-6 text-center">
-            <Camera className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <div className="text-sm text-gray-600 mb-2">
-              Drop photos here or click to upload
+        </div>
+        
+        {/* Client Subsection */}
+        <div>
+          <h3 className="text-md font-medium mb-4 border-b pb-2">Client Information</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="client_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
+                      Client Name
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="Enter client name"
+                        className="w-full p-2 border rounded-lg"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="client_phone_number"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
+                      Phone Number
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="Enter phone number"
+                        className="w-full p-2 border rounded-lg"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
             </div>
-            <button type="button" className="bg-blue-50 text-blue-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-100">
-              Browse Files
-            </button>
+            <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="client_passport_number"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
+                      Passport Number
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="Enter passport number"
+                        className="w-full p-2 border rounded-lg"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="client_buyer_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
+                      Buyer ID
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="Enter buyer ID"
+                        className="w-full p-2 border rounded-lg"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
           </div>
         </div>
       </div>

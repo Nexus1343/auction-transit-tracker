@@ -13,10 +13,12 @@ export interface VehicleDetails {
   stock_number?: string
   body_type_id?: number
   has_key?: boolean
+  highlights?: string
   destination?: string
   client_name?: string
   client_phone_number?: string
   client_passport_number?: string
+  client_buyer_id?: string
   address?: string
   city?: string
   state?: string
@@ -25,6 +27,17 @@ export interface VehicleDetails {
   warehouse_id?: number
   gate_pass_pin?: string
   is_sublot?: boolean
+  manufacturer_id?: number
+  model_id?: number
+  generation_id?: number
+  auction_id?: number
+  dealer_id?: number
+  sub_dealer_id?: number
+  pay_due_date?: string
+  auction_won_price?: number
+  auction_final_price?: number
+  auction_pay_date?: string
+  purchase_date?: string
 }
 
 export interface StatusHistoryEvent {
@@ -42,6 +55,7 @@ export interface VehicleFormValues {
   client_name: string
   client_phone_number: string
   client_passport_number: string
+  client_buyer_id: string
   address: string
   city: string
   state: string
@@ -50,6 +64,20 @@ export interface VehicleFormValues {
   warehouse_id: number
   gate_pass_pin: string
   is_sublot: boolean
+  manufacturer_id: number
+  model_id: number
+  generation_id: number
+  body_type_id: number
+  has_key: boolean
+  highlights: string
+  auction_id: number
+  dealer_id: number
+  sub_dealer_id: number
+  pay_due_date: string
+  auction_won_price: number
+  auction_final_price: number
+  auction_pay_date: string
+  purchase_date: string
 }
 
 export interface SectionsData {

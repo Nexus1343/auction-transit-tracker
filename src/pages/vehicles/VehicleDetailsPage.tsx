@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
@@ -9,8 +8,7 @@ import { useForm } from "react-hook-form"
 import { VehicleDetails, SectionsData, VehicleFormValues } from "./types/vehicleTypes"
 import { VehicleHeader } from "./components/VehicleHeader"
 import { VehicleBasicInfo } from "./components/VehicleBasicInfo"
-import { AuctionLocation } from "./components/AuctionLocation"
-import { TransportSection } from "./components/TransportSection"
+import { AuctionSection } from "./components/AuctionSection"
 import { DealerSection } from "./components/DealerSection"
 import { DocumentsSection } from "./components/DocumentsSection"
 import { useVehicleHistory } from "./hooks/useVehicleHistory"
@@ -55,6 +53,7 @@ const VehicleDetailsPage = () => {
       client_name: "",
       client_phone_number: "",
       client_passport_number: "",
+      client_buyer_id: "",
       address: "",
       city: "",
       state: "",
@@ -62,7 +61,21 @@ const VehicleDetailsPage = () => {
       receiver_port_id: 0,
       warehouse_id: 0,
       gate_pass_pin: "",
-      is_sublot: false
+      is_sublot: false,
+      manufacturer_id: 0,
+      model_id: 0,
+      generation_id: 0,
+      body_type_id: 0,
+      has_key: false,
+      highlights: "",
+      auction_id: 0,
+      dealer_id: 0,
+      sub_dealer_id: 0,
+      pay_due_date: "",
+      auction_won_price: 0,
+      auction_final_price: 0,
+      auction_pay_date: "",
+      purchase_date: ""
     }
   })
   
@@ -87,6 +100,7 @@ const VehicleDetailsPage = () => {
             client_name,
             client_phone_number,
             client_passport_number,
+            client_buyer_id,
             address,
             city,
             state,
@@ -95,6 +109,20 @@ const VehicleDetailsPage = () => {
             warehouse_id,
             gate_pass_pin,
             is_sublot,
+            manufacturer_id,
+            model_id,
+            generation_id,
+            body_type_id,
+            has_key,
+            highlights,
+            auction_id,
+            dealer_id,
+            sub_dealer_id,
+            pay_due_date,
+            auction_won_price,
+            auction_final_price,
+            auction_pay_date,
+            purchase_date,
             manufacturer:manufacturer_id(name),
             model:model_id(name)
           `)
@@ -115,6 +143,7 @@ const VehicleDetailsPage = () => {
           client_name: data.client_name || "",
           client_phone_number: data.client_phone_number || "",
           client_passport_number: data.client_passport_number || "",
+          client_buyer_id: data.client_buyer_id || "",
           address: data.address || "",
           city: data.city || "",
           state: data.state || "",
@@ -122,14 +151,28 @@ const VehicleDetailsPage = () => {
           receiver_port_id: data.receiver_port_id || 0,
           warehouse_id: data.warehouse_id || 0,
           gate_pass_pin: data.gate_pass_pin || "",
-          is_sublot: data.is_sublot || false
+          is_sublot: data.is_sublot || false,
+          manufacturer_id: data.manufacturer_id || 0,
+          model_id: data.model_id || 0,
+          generation_id: data.generation_id || 0,
+          body_type_id: data.body_type_id || 0,
+          has_key: data.has_key || false,
+          highlights: data.highlights || "",
+          auction_id: data.auction_id || 0,
+          dealer_id: data.dealer_id || 0,
+          sub_dealer_id: data.sub_dealer_id || 0,
+          pay_due_date: data.pay_due_date || "",
+          auction_won_price: data.auction_won_price || 0,
+          auction_final_price: data.auction_final_price || 0,
+          auction_pay_date: data.auction_pay_date || "",
+          purchase_date: data.purchase_date || ""
         })
 
         if (data.destination) {
           setSectionsData(prev => ({...prev, transport: {}}))
         }
         
-        if (data.client_name || data.client_phone_number || data.client_passport_number) {
+        if (data.client_name || data.client_phone_number || data.client_passport_number || data.client_buyer_id) {
           setSectionsData(prev => ({...prev, dealer: {}}))
         }
         
@@ -166,6 +209,7 @@ const VehicleDetailsPage = () => {
         client_name: data.client_name,
         client_phone_number: data.client_phone_number,
         client_passport_number: data.client_passport_number,
+        client_buyer_id: data.client_buyer_id,
         // Auction Location fields
         address: data.address,
         city: data.city,
@@ -174,7 +218,25 @@ const VehicleDetailsPage = () => {
         receiver_port_id: data.receiver_port_id > 0 ? data.receiver_port_id : null,
         warehouse_id: data.warehouse_id > 0 ? data.warehouse_id : null,
         gate_pass_pin: data.gate_pass_pin,
-        is_sublot: data.is_sublot
+        is_sublot: data.is_sublot,
+        // Added vehicle fields
+        manufacturer_id: data.manufacturer_id > 0 ? data.manufacturer_id : null,
+        model_id: data.model_id > 0 ? data.model_id : null, 
+        generation_id: data.generation_id > 0 ? data.generation_id : null,
+        body_type_id: data.body_type_id > 0 ? data.body_type_id : null,
+        has_key: data.has_key,
+        highlights: data.highlights,
+        // Auction fields
+        auction_id: data.auction_id > 0 ? data.auction_id : null,
+        // Purchase fields
+        auction_won_price: data.auction_won_price || null,
+        auction_final_price: data.auction_final_price || null,
+        auction_pay_date: data.auction_pay_date || null,
+        purchase_date: data.purchase_date || null,
+        // Dealer fields
+        dealer_id: data.dealer_id > 0 ? data.dealer_id : null,
+        sub_dealer_id: data.sub_dealer_id > 0 ? data.sub_dealer_id : null,
+        pay_due_date: data.pay_due_date || null
       };
       
       const { error } = await supabase
@@ -203,6 +265,7 @@ const VehicleDetailsPage = () => {
             client_name,
             client_phone_number,
             client_passport_number,
+            client_buyer_id,
             address,
             city,
             state,
@@ -211,6 +274,20 @@ const VehicleDetailsPage = () => {
             warehouse_id,
             gate_pass_pin,
             is_sublot,
+            manufacturer_id,
+            model_id,
+            generation_id,
+            body_type_id,
+            has_key,
+            highlights,
+            auction_id,
+            dealer_id,
+            sub_dealer_id,
+            pay_due_date,
+            auction_won_price,
+            auction_final_price,
+            auction_pay_date,
+            purchase_date,
             manufacturer:manufacturer_id(name),
             model:model_id(name)
           `)
@@ -328,14 +405,8 @@ const VehicleDetailsPage = () => {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <VehicleBasicInfo form={form} />
-            <AuctionLocation form={form} />
-            <TransportSection
-              form={form}
-              sectionsData={sectionsData}
-              addSection={addSection}
-              removeSection={removeSection}
-            />
-            <DealerSection
+            <AuctionSection form={form} />
+            <DealerClientSection 
               form={form}
               sectionsData={sectionsData}
               addSection={addSection}
