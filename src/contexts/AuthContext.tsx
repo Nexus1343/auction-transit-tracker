@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Session, User } from '@supabase/supabase-js';
@@ -55,17 +54,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (data && data.roles) {
-        // Safely access data properties
         const roleData = data.roles;
         const roleName = roleData.name;
         let rolePermissions: UserPermissions = {};
 
         try {
-          // Handle both string and object formats for permissions
           if (typeof roleData.permissions === 'string') {
-            rolePermissions = JSON.parse(roleData.permissions);
-          } else {
-            rolePermissions = roleData.permissions;
+            const parsedPermissions = JSON.parse(roleData.permissions);
+            if (parsedPermissions && typeof parsedPermissions === 'object' && !Array.isArray(parsedPermissions)) {
+              rolePermissions = validatePermissionsObject(parsedPermissions);
+            }
+          } else if (roleData.permissions && typeof roleData.permissions === 'object' && !Array.isArray(roleData.permissions)) {
+            rolePermissions = validatePermissionsObject(roleData.permissions);
           }
         } catch (e) {
           console.error('Error parsing permissions:', e);
@@ -80,8 +80,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const validatePermissionsObject = (obj: any): UserPermissions => {
+    const validatedPermissions: UserPermissions = {};
+    
+    Object.keys(obj).forEach(resource => {
+      const resourcePermissions = obj[resource];
+      
+      if (resourcePermissions && typeof resourcePermissions === 'object') {
+        validatedPermissions[resource] = {
+          read: Boolean(resourcePermissions.read),
+          write: Boolean(resourcePermissions.write),
+          delete: resourcePermissions.delete !== undefined ? Boolean(resourcePermissions.delete) : undefined
+        };
+      }
+    });
+    
+    return validatedPermissions;
+  };
+
   useEffect(() => {
-    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user || null);
@@ -93,7 +110,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
     });
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setSession(session);
