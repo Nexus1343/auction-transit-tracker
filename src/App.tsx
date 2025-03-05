@@ -5,6 +5,7 @@ import Index from './pages/Index'
 import NotFound from './pages/NotFound'
 import VehiclesPage from './pages/vehicles/VehiclesPage'
 import VehicleDetailsPage from './pages/vehicles/VehicleDetailsPage'
+import DealersPage from './pages/dealers/DealersPage'
 import LoginPage from './pages/auth/LoginPage'
 import RegisterPage from './pages/auth/RegisterPage'
 import { Toaster } from './components/ui/toaster'
@@ -26,6 +27,7 @@ function App() {
             <Route index element={<Index />} />
             <Route path="vehicles" element={<VehiclesPage />} />
             <Route path="vehicles/:id" element={<VehicleDetailsPage />} />
+            <Route path="dealers" element={<DealersPage />} />
           </Route>
         </Route>
         
