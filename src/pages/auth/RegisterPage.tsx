@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -11,12 +11,37 @@ const RegisterPage = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [localLoading, setLocalLoading] = useState(false);
   const { signUp, isLoading } = useAuth();
+
+  useEffect(() => {
+    // Reset local loading state after 10 seconds as a fallback
+    if (localLoading) {
+      const timer = setTimeout(() => {
+        console.log('Register timeout reached, resetting local loading state');
+        setLocalLoading(false);
+      }, 10000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [localLoading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLocalLoading(true);
     await signUp(email, password, name);
+    // Don't reset localLoading here, let the auth state handle it
   };
+
+  // Derive actual loading state, using both local and auth loading
+  const buttonLoading = localLoading || isLoading;
+
+  // Reset local loading state when auth loading state changes
+  useEffect(() => {
+    if (!isLoading && localLoading) {
+      setLocalLoading(false);
+    }
+  }, [isLoading]);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -37,6 +62,7 @@ const RegisterPage = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
+                disabled={buttonLoading}
               />
             </div>
             <div className="space-y-2">
@@ -48,6 +74,7 @@ const RegisterPage = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                disabled={buttonLoading}
               />
             </div>
             <div className="space-y-2">
@@ -60,6 +87,7 @@ const RegisterPage = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
+                disabled={buttonLoading}
               />
               <p className="text-xs text-gray-500">
                 Password must be at least 6 characters long
@@ -67,8 +95,8 @@ const RegisterPage = () => {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Creating account...' : 'Create account'}
+            <Button type="submit" className="w-full" disabled={buttonLoading}>
+              {buttonLoading ? 'Creating account...' : 'Create account'}
             </Button>
             <div className="text-sm text-center text-gray-500">
               Already have an account?{' '}
