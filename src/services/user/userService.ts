@@ -36,7 +36,7 @@ export const fetchUsers = async (): Promise<User[]> => {
       .from('user_profile')
       .select(`
         *,
-        app_roles (
+        roles (
           id,
           name,
           permissions
@@ -52,7 +52,7 @@ export const fetchUsers = async (): Promise<User[]> => {
       email: user.email,
       mobile: user.mobile || '',
       role_id: user.role_id,
-      role: user.app_roles?.name || 'Regular User',
+      role: user.roles?.name || 'Regular User',
       status: (user.status || 'Active') as UserStatus,
       lastLogin: user.last_login_at || ''
     })) as User[];
@@ -65,7 +65,7 @@ export const fetchUsers = async (): Promise<User[]> => {
 export const fetchRoles = async (): Promise<UserRole[]> => {
   try {
     const { data, error } = await supabase
-      .from('app_roles')
+      .from('roles')
       .select('*');
 
     if (error) throw error;

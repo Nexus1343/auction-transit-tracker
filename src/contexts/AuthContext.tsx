@@ -44,7 +44,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .from('user_profile')
         .select(`
           role_id,
-          app_roles(id, name, permissions)
+          roles(id, name, permissions)
         `)
         .eq('auth_id', userId)
         .single();
@@ -54,9 +54,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
-      if (data && data.app_roles) {
+      if (data && data.roles) {
         // Safely access data properties
-        const roleData = data.app_roles;
+        const roleData = data.roles;
         const roleName = roleData.name;
         let rolePermissions: UserPermissions = {};
 
