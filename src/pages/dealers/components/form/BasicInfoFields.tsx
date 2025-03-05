@@ -1,76 +1,80 @@
 
 import React from 'react';
-import { Input } from "@/components/ui/input";
-import { Dealer } from "../../../../services/dealer";
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface BasicInfoFieldsProps {
-  formData: Dealer;
-  onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  isSubDealer: boolean;
+  name: string;
+  email: string | null;
+  password: string | null;
+  mobile: string | null;
+  isEditing: boolean;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  isSubDealer?: boolean;
 }
 
-const BasicInfoFields = ({ formData, onInputChange, isSubDealer }: BasicInfoFieldsProps) => {
+const BasicInfoFields: React.FC<BasicInfoFieldsProps> = ({
+  name,
+  email,
+  password,
+  mobile,
+  isEditing,
+  onChange,
+  isSubDealer = false
+}) => {
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Dealer Name
-        </label>
+        <Label htmlFor="name">Name</Label>
         <Input
-          type="text"
+          id="name"
           name="name"
-          value={formData.name}
-          onChange={onInputChange}
-          required
+          value={name || ''}
+          onChange={onChange}
+          readOnly={!isEditing}
+          className={!isEditing ? 'bg-gray-100' : ''}
         />
       </div>
+      
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Email
-        </label>
+        <Label htmlFor="email">Email</Label>
         <Input
-          type="email"
+          id="email"
           name="email"
-          value={formData.email || ''}
-          onChange={onInputChange}
+          value={email || ''}
+          onChange={onChange}
+          readOnly={!isEditing}
+          className={!isEditing ? 'bg-gray-100' : ''}
         />
       </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Password
-        </label>
-        <Input
-          type="password"
-          name="password"
-          value={formData.password || ''}
-          onChange={onInputChange}
-          placeholder={formData.id ? "••••••••" : ""}
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Mobile
-        </label>
-        <Input
-          type="text"
-          name="mobile"
-          value={formData.mobile || ''}
-          onChange={onInputChange}
-        />
-      </div>
-      {!isSubDealer && (
+      
+      {isEditing && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Buyer ID
-          </label>
+          <Label htmlFor="password">
+            {isSubDealer ? 'Password' : 'Password (Optional)'}
+          </Label>
           <Input
-            type="text"
-            name="buyer_id"
-            value={formData.buyer_id || ''}
-            onChange={onInputChange}
+            id="password"
+            name="password"
+            type="password"
+            value={password || ''}
+            onChange={onChange}
+            placeholder={isSubDealer ? 'Required' : 'Leave empty to keep unchanged'}
           />
         </div>
       )}
+      
+      <div>
+        <Label htmlFor="mobile">Mobile Number</Label>
+        <Input
+          id="mobile"
+          name="mobile"
+          value={mobile || ''}
+          onChange={onChange}
+          readOnly={!isEditing}
+          className={!isEditing ? 'bg-gray-100' : ''}
+        />
+      </div>
     </div>
   );
 };

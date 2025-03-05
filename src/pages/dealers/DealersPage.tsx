@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, FormEvent } from 'react';
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
@@ -22,21 +21,23 @@ import TableView from './components/TableView';
 import HierarchyView from './components/HierarchyView';
 import DealerDialog from './components/DealerDialog';
 
-const DealersPage = () => {
+const DealersPage: React.FC = () => {
   const queryClient = useQueryClient();
   const [activeView, setActiveView] = useState<'table' | 'hierarchy'>('table');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDealer, setSelectedDealer] = useState<Dealer | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isSubDealer, setIsSubDealer] = useState(false);
-  
+  const [formMode, setFormMode] = useState<'create' | 'edit' | 'add-subdealer'>('create');
+  const [isAddingSubDealer, setIsAddingSubDealer] = useState(false);
+  const [showDealerDialog, setShowDealerDialog] = useState(false);
   const [formData, setFormData] = useState<Dealer>({
     name: '',
-    username: '',
-    password: '',
-    mobile: '',
-    buyer_id: '',
-    buyer_id_2: '',
+    email: null,
+    password: null,
+    mobile: null,
+    buyer_id: null,
+    buyer_id_2: null,
     dealer_fee: 0,
     dealer_fee_2: 0,
     transport_price_id: null,
@@ -44,7 +45,6 @@ const DealersPage = () => {
     dealer_id: null
   });
 
-  // Fetch dealers using React Query
   const { 
     data: dealers = [], 
     isLoading: isDealersLoading,
@@ -54,7 +54,6 @@ const DealersPage = () => {
     queryFn: fetchDealers
   });
 
-  // Fetch transport prices using React Query
   const { 
     data: transportPrices = []
   } = useQuery({
@@ -62,7 +61,6 @@ const DealersPage = () => {
     queryFn: fetchTransportPrices
   });
 
-  // Fetch container prices using React Query
   const { 
     data: containerPrices = []
   } = useQuery({
@@ -70,7 +68,6 @@ const DealersPage = () => {
     queryFn: fetchContainerPrices
   });
 
-  // Mutation for adding a dealer
   const addDealerMutation = useMutation({
     mutationFn: (dealer: Dealer) => isSubDealer ? addSubDealer(dealer as SubDealer) : addDealer(dealer),
     onSuccess: () => {
@@ -84,7 +81,6 @@ const DealersPage = () => {
     }
   });
 
-  // Mutation for updating a dealer
   const updateDealerMutation = useMutation({
     mutationFn: updateDealer,
     onSuccess: () => {
@@ -98,7 +94,6 @@ const DealersPage = () => {
     }
   });
 
-  // Mutation for deleting a dealer
   const deleteDealerMutation = useMutation({
     mutationFn: deleteDealer,
     onSuccess: () => {
@@ -119,13 +114,13 @@ const DealersPage = () => {
       setFormData({
         id: selectedDealer.id,
         name: selectedDealer.name,
-        username: selectedDealer.username || '',
-        password: selectedDealer.password || '',
-        mobile: selectedDealer.mobile || '',
-        buyer_id: selectedDealer.buyer_id || '',
-        buyer_id_2: selectedDealer.buyer_id_2 || '',
-        dealer_fee: selectedDealer.dealer_fee || 0,
-        dealer_fee_2: selectedDealer.dealer_fee_2 || 0,
+        email: selectedDealer.email,
+        password: selectedDealer.password,
+        mobile: selectedDealer.mobile,
+        buyer_id: selectedDealer.buyer_id,
+        buyer_id_2: selectedDealer.buyer_id_2,
+        dealer_fee: selectedDealer.dealer_fee,
+        dealer_fee_2: selectedDealer.dealer_fee_2,
         transport_price_id: selectedDealer.transport_price_id,
         container_price_id: selectedDealer.container_price_id,
         dealer_id: selectedDealer.dealer_id
@@ -133,11 +128,11 @@ const DealersPage = () => {
     } else {
       setFormData({
         name: '',
-        username: '',
-        password: '',
-        mobile: '',
-        buyer_id: '',
-        buyer_id_2: '',
+        email: null,
+        password: null,
+        mobile: null,
+        buyer_id: null,
+        buyer_id_2: null,
         dealer_fee: 0,
         dealer_fee_2: 0,
         transport_price_id: null,
@@ -186,36 +181,22 @@ const DealersPage = () => {
     }
   };
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    
-    if (selectedDealer) {
-      updateDealerMutation.mutate(formData);
-    } else {
-      const subDealerData: SubDealer = {
-        name: formData.name,
-        username: formData.username,
-        password: formData.password,
-        mobile: formData.mobile,
-        dealer_fee: formData.dealer_fee,
-        dealer_id: formData.dealer_id
-      };
-      
-      isSubDealer 
-        ? addDealerMutation.mutate(subDealerData as Dealer) 
-        : addDealerMutation.mutate(formData);
-    }
-  };
-
-  const handleDeleteDealer = (id: number) => {
-    if (window.confirm('Are you sure you want to delete this dealer?')) {
-      deleteDealerMutation.mutate(id);
-    }
-  };
-
   const handleAddDealer = () => {
-    setSelectedDealer(null);
-    setIsModalOpen(true);
+    setFormMode('create');
+    setSelectedDealer({
+      name: '',
+      email: null,
+      password: null,
+      mobile: null,
+      buyer_id: null,
+      buyer_id_2: null,
+      dealer_fee: 0,
+      dealer_fee_2: 0,
+      transport_price_id: null,
+      container_price_id: null
+    });
+    setIsAddingSubDealer(false);
+    setShowDealerDialog(true);
   };
 
   const handleEditDealer = (dealer: Dealer) => {
@@ -223,6 +204,114 @@ const DealersPage = () => {
     setIsSubDealer(isSubDealer);
     setSelectedDealer(dealer);
     setIsModalOpen(true);
+  };
+
+  const handleDealerFormSubmit = async (data: Dealer) => {
+    try {
+      setIsSubmitting(true);
+      
+      if (formMode === 'create') {
+        let dealerToCreate: Dealer = {
+          name: data.name,
+          email: data.email,
+          password: data.password,
+          mobile: data.mobile,
+          buyer_id: data.buyer_id,
+          buyer_id_2: data.buyer_id_2,
+          dealer_fee: data.dealer_fee,
+          dealer_fee_2: data.dealer_fee_2,
+          transport_price_id: data.transport_price_id,
+          container_price_id: data.container_price_id,
+        };
+        
+        if (data.parentDealerId) {
+          dealerToCreate = {
+            ...dealerToCreate,
+            dealer_id: data.parentDealerId
+          };
+        }
+        
+        if (data.subDealers && data.subDealers.length > 0) {
+          dealerToCreate.subDealers = data.subDealers.map(sub => ({
+            name: sub.name,
+            email: sub.email,
+            password: sub.password,
+            mobile: sub.mobile,
+            dealer_fee: sub.dealer_fee
+          }));
+        }
+        
+        const newDealer = await createDealer(dealerToCreate);
+        
+        if (newDealer) {
+          toast({
+            title: "Dealer created",
+            description: `${newDealer.name} has been created successfully.`,
+          });
+          
+          const updatedDealers = await getAllDealers();
+          setDealers(updatedDealers);
+        }
+      } else if (formMode === 'edit') {
+        const updatedDealer = await updateDealer({
+          id: selectedDealer.id,
+          name: data.name,
+          email: data.email,
+          password: data.password,
+          mobile: data.mobile,
+          buyer_id: data.buyer_id,
+          buyer_id_2: data.buyer_id_2,
+          dealer_fee: data.dealer_fee,
+          dealer_fee_2: data.dealer_fee_2,
+          transport_price_id: data.transport_price_id,
+          container_price_id: data.container_price_id,
+        });
+        
+        if (updatedDealer) {
+          toast({
+            title: "Dealer updated",
+            description: `${updatedDealer.name} has been updated successfully.`,
+          });
+          
+          const updatedDealers = await getAllDealers();
+          setDealers(updatedDealers);
+        }
+      } else if (formMode === 'add-subdealer' && selectedDealer.id) {
+        const updatedDealer = await addSubDealer({
+          name: data.name,
+          email: data.email,
+          password: data.password,
+          mobile: data.mobile,
+          dealer_fee: data.dealer_fee,
+          dealer_id: selectedDealer.id
+        });
+        
+        if (updatedDealer) {
+          toast({
+            title: "Sub-dealer added",
+            description: `${updatedDealer.name} has been added successfully.`,
+          });
+          
+          const updatedDealers = await getAllDealers();
+          setDealers(updatedDealers);
+        }
+      }
+      
+      setFormMode('create');
+      setSelectedDealer(null);
+      setIsModalOpen(false);
+      setIsAddingSubDealer(false);
+      setShowDealerDialog(false);
+    } catch (error) {
+      console.error('Error submitting dealer form:', error);
+      toast.error('Failed to submit dealer form');
+    }
+  };
+
+  const handleDeleteDealer = (id: number) => {
+    if (window.confirm('Are you sure you want to delete this dealer?')) {
+      deleteDealerMutation.mutate(id);
+    }
   };
 
   const isLoading = isDealersLoading || 
@@ -282,7 +371,7 @@ const DealersPage = () => {
         onInputChange={handleInputChange}
         onSelectChange={handleSelectChange}
         onSwitchChange={handleSwitchChange}
-        onSubmit={handleSubmit}
+        onSubmit={handleDealerFormSubmit}
         isLoading={isLoading}
         transportPrices={transportPrices}
         containerPrices={containerPrices}

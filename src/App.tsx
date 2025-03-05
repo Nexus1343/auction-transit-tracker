@@ -8,6 +8,7 @@ import VehicleDetailsPage from './pages/vehicles/VehicleDetailsPage'
 import DealersPage from './pages/dealers/DealersPage'
 import PricingPage from './pages/pricing/PricingPage'
 import ProfilePage from './pages/profile/ProfilePage'
+import UserManagementPage from './pages/profile/UserManagementPage'
 import LoginPage from './pages/auth/LoginPage'
 import RegisterPage from './pages/auth/RegisterPage'
 import { Toaster } from './components/ui/toaster'
@@ -32,6 +33,7 @@ function App() {
             <Route path="dealers" element={<DealersPage />} />
             <Route path="pricing" element={<PricingPage />} />
             <Route path="profile" element={<ProfilePage />} />
+            <Route path="profile/users" element={<UserManagementPage />} />
           </Route>
         </Route>
         

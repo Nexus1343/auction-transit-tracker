@@ -1,6 +1,6 @@
 
 import { Link } from 'react-router-dom'
-import { Car, Users, DollarSign, LayoutDashboard, FileText } from 'lucide-react'
+import { Car, Users, DollarSign, LayoutDashboard, FileText, UserCog } from 'lucide-react'
 
 const Sidebar = () => {
   const navigation = [
@@ -8,6 +8,7 @@ const Sidebar = () => {
     { name: 'Vehicles', href: '/vehicles', icon: Car },
     { name: 'Dealers', href: '/dealers', icon: Users },
     { name: 'Pricing', href: '/pricing', icon: DollarSign },
+    { name: 'User Management', href: '/profile/users', icon: UserCog },
   ]
 
   return (

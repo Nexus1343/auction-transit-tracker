@@ -1,121 +1,114 @@
 
 import React from 'react';
-import { Edit2, Trash2, Copy } from 'lucide-react';
-import { Button } from "@/components/ui/button";
-import { Dealer } from "../../../services/dealer";
+import { Edit2, Trash2 } from 'lucide-react';
+import { Dealer } from '@/services/dealer/types';
 
 interface TableViewProps {
   dealers: Dealer[];
-  searchTerm: string;
   onEditDealer: (dealer: Dealer) => void;
-  onDeleteDealer: (id: number) => void;
+  onDeleteDealer: (dealer: Dealer) => void;
 }
 
-const TableView = ({ dealers, searchTerm, onEditDealer, onDeleteDealer }: TableViewProps) => {
-  // Get all top-level dealers
-  const topLevelDealers = dealers.filter(dealer => 
-    dealer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (dealer.username && dealer.username.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
-  // Create a flat array of all sub-dealers
-  const allSubDealers = dealers.reduce((acc, dealer) => {
-    if (dealer.subDealers && dealer.subDealers.length > 0) {
-      const filteredSubDealers = dealer.subDealers.filter(subDealer => 
-        subDealer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (subDealer.username && subDealer.username.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
-      
-      // Convert sub-dealers to dealers for consistent rendering, but add parent dealer info
-      const mappedSubDealers = filteredSubDealers.map(subDealer => ({
-        ...subDealer,
-        buyer_id: null,
-        buyer_id_2: null,
-        dealer_fee_2: null,
-        transport_price_id: null,
-        container_price_id: null,
-        parentDealerName: dealer.name, // Add parent dealer name
-        parentDealerId: dealer.id // Add parent dealer id
-      }));
-      
-      return [...acc, ...mappedSubDealers];
-    }
-    return acc;
-  }, [] as Dealer[]);
-
-  // Combine dealers and sub-dealers for display
-  const filteredDealers = [...topLevelDealers, ...allSubDealers];
-
+const TableView: React.FC<TableViewProps> = ({ dealers, onEditDealer, onDeleteDealer }) => {
+  const allDealers = dealers.flatMap(dealer => {
+    const mainDealer = {
+      ...dealer,
+      isSubDealer: false,
+      parentDealerName: dealer.parentDealerName || '-'
+    };
+    
+    const subDealers = dealer.subDealers?.map(sub => ({
+      id: sub.id,
+      name: sub.name,
+      email: sub.email,
+      mobile: sub.mobile,
+      dealer_fee: sub.dealer_fee,
+      dealer_id: dealer.id,
+      isSubDealer: true,
+      parentDealerName: dealer.name
+    })) || [];
+    
+    return [mainDealer, ...subDealers];
+  });
+  
   return (
-    <table className="w-full">
-      <thead>
-        <tr className="border-b">
-          <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">Name</th>
-          <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">Username</th>
-          <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">Mobile</th>
-          <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">Buyer ID</th>
-          <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">Dealer Fee</th>
-          <th className="px-4 py-2 text-right text-sm font-medium text-gray-500">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {filteredDealers.map(dealer => {
-          // Check if dealer has the property 'subDealers'
-          const hasSubDealers = 'subDealers' in dealer && dealer.subDealers && dealer.subDealers.length > 0;
-          
-          return (
-            <tr key={`${dealer.dealer_id ? 'sub-' : ''}${dealer.id}`} className="border-b hover:bg-gray-50">
-              <td className="px-4 py-3">
-                <div className="font-medium">{dealer.name}</div>
-                
-                {'parentDealerName' in dealer && dealer.parentDealerName && (
-                  <div className="text-sm text-gray-500">
-                    Sub-dealer of {dealer.parentDealerName}
-                  </div>
-                )}
-                
-                {!dealer.dealer_id && hasSubDealers && (
-                  <div className="text-sm text-gray-500">
-                    {dealer.subDealers.length} sub-dealers
-                  </div>
-                )}
-              </td>
-              <td className="px-4 py-3">
-                <div className="flex items-center space-x-2">
-                  <span className="text-gray-600">{dealer.username}</span>
-                  <button className="opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Copy className="w-4 h-4 text-gray-400 hover:text-gray-600" />
-                  </button>
-                </div>
-              </td>
-              <td className="px-4 py-3 text-gray-600">{dealer.mobile || '-'}</td>
-              <td className="px-4 py-3 text-gray-600">{dealer.buyer_id || '-'}</td>
-              <td className="px-4 py-3 text-gray-600">
-                ${dealer.dealer_fee ? dealer.dealer_fee.toFixed(2) : '0.00'}
-              </td>
-              <td className="px-4 py-3">
-                <div className="flex items-center justify-end space-x-2">
-                  <Button 
-                    onClick={() => onEditDealer(dealer)}
-                    variant="ghost"
-                    size="icon"
-                  >
-                    <Edit2 className="w-4 h-4 text-gray-400" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon"
-                    onClick={() => dealer.id && onDeleteDealer(dealer.id)}
-                  >
-                    <Trash2 className="w-4 h-4 text-gray-400" />
-                  </Button>
-                </div>
-              </td>
+    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Name
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Email
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Mobile
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Dealer Fee
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Parent
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Type
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
             </tr>
-          );
-        })}
-      </tbody>
-    </table>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {allDealers.map((dealer) => (
+              <tr key={`${dealer.isSubDealer ? 'sub-' : ''}${dealer.id}`} className="hover:bg-gray-50">
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm font-medium text-gray-900">{dealer.name}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-500">{dealer.email || '-'}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-500">{dealer.mobile || '-'}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-500">
+                    {dealer.dealer_fee ? `$${dealer.dealer_fee}` : '-'}
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-500">{dealer.parentDealerName}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                    dealer.isSubDealer 
+                      ? 'bg-yellow-100 text-yellow-800' 
+                      : 'bg-green-100 text-green-800'
+                  }`}>
+                    {dealer.isSubDealer ? 'Sub-Dealer' : 'Dealer'}
+                  </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <button
+                    onClick={() => onEditDealer(dealer)}
+                    className="text-indigo-600 hover:text-indigo-900 mr-4"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => onDeleteDealer(dealer)}
+                    className="text-red-600 hover:text-red-900"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 };
 
