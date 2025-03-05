@@ -1,6 +1,6 @@
 
-import { Link } from 'react-router-dom'
-import { UserCircle, LogOut } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { UserCircle, LogOut, Settings } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import {
@@ -14,6 +14,7 @@ import {
 
 const Navbar = () => {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <header className="bg-white border-b border-gray-200">
@@ -37,6 +38,10 @@ const Navbar = () => {
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate('/profile')}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Profile Settings</span>
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => signOut()}>
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Log out</span>
