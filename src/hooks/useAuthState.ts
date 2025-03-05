@@ -29,6 +29,11 @@ export const useAuthState = () => {
 
       if (userError) {
         console.error('Error fetching user role:', userError);
+        setUserRole('User');
+        setPermissions({
+          '': { read: true, write: false, delete: false }
+        });
+        setIsLoading(false);
         return;
       }
 
@@ -46,6 +51,7 @@ export const useAuthState = () => {
         if (roleName === 'Admin') {
           console.log('Admin user detected, setting full permissions');
           setPermissions(createAdminPermissions());
+          setIsLoading(false);
           return;
         }
         
@@ -94,7 +100,16 @@ export const useAuthState = () => {
   useEffect(() => {
     const setupAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        console.log('Setting up auth...');
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+          setIsLoading(false);
+          return;
+        }
+        
+        console.log('Session:', session ? 'Found' : 'Not found');
         setSession(session);
         setUser(session?.user || null);
         
@@ -102,6 +117,7 @@ export const useAuthState = () => {
           await fetchUserRole(session.user.id);
         } else {
           // No user is logged in, set loading to false
+          console.log('No user logged in, setting loading to false');
           setIsLoading(false);
         }
       } catch (error) {
@@ -115,6 +131,7 @@ export const useAuthState = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         try {
+          console.log('Auth state changed, event:', _event);
           setSession(session);
           setUser(session?.user || null);
           

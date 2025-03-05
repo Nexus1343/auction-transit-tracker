@@ -1,9 +1,14 @@
 
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useEffect } from 'react';
 
 const ProtectedRoute = () => {
   const { user, isLoading } = useAuth();
+
+  useEffect(() => {
+    console.log('Protected Route - Auth state:', { isLoading, isAuthenticated: !!user });
+  }, [isLoading, user]);
 
   if (isLoading) {
     return (
@@ -17,9 +22,11 @@ const ProtectedRoute = () => {
   }
 
   if (!user) {
+    console.log('No user found, redirecting to login');
     return <Navigate to="/login" replace />;
   }
 
+  console.log('User authenticated, rendering outlet');
   return <Outlet />;
 };
 
