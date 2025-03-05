@@ -1,12 +1,11 @@
 
 import React, { FormEvent } from 'react';
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { DialogFooter } from "@/components/ui/dialog";
 import { Dealer } from "../../../services/dealer";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import SubDealerToggle from './form/SubDealerToggle';
+import ParentDealerSelector from './form/ParentDealerSelector';
+import BasicInfoFields from './form/BasicInfoFields';
+import PricingFields from './form/PricingFields';
+import FormFooter from './form/FormFooter';
 
 interface DealerFormProps {
   formData: Dealer;
@@ -37,206 +36,40 @@ const DealerForm = ({
 }: DealerFormProps) => {
   return (
     <form onSubmit={onSubmit}>
-      <div className="flex items-center space-x-2 mb-4">
-        <Switch 
-          id="is-sub-dealer"
-          checked={isSubDealer}
-          onCheckedChange={(checked) => onSwitchChange('isSubDealer', checked)}
-        />
-        <Label htmlFor="is-sub-dealer">This is a sub-dealer</Label>
-      </div>
+      <SubDealerToggle
+        isSubDealer={isSubDealer}
+        onSwitchChange={onSwitchChange}
+      />
 
       {isSubDealer && (
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Parent Dealer
-          </label>
-          <Select 
-            value={formData.dealer_id?.toString() || "none"}
-            onValueChange={(value) => onSelectChange('dealer_id', value === "none" ? "" : value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select parent dealer" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">None</SelectItem>
-              {dealers && dealers.map(dealer => (
-                <SelectItem key={dealer.id} value={dealer.id?.toString() || ""}>
-                  {dealer.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <ParentDealerSelector
+          formData={formData}
+          onSelectChange={onSelectChange}
+          dealers={dealers}
+        />
       )}
 
       <div className="grid grid-cols-2 gap-6 mt-4">
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Dealer Name
-            </label>
-            <Input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={onInputChange}
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Username (Email)
-            </label>
-            <Input
-              type="text"
-              name="username"
-              value={formData.username || ''}
-              onChange={onInputChange}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Password
-            </label>
-            <Input
-              type="password"
-              name="password"
-              value={formData.password || ''}
-              onChange={onInputChange}
-              placeholder={formData.id ? "••••••••" : ""}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Mobile
-            </label>
-            <Input
-              type="text"
-              name="mobile"
-              value={formData.mobile || ''}
-              onChange={onInputChange}
-            />
-          </div>
-          {!isSubDealer && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Buyer ID
-              </label>
-              <Input
-                type="text"
-                name="buyer_id"
-                value={formData.buyer_id || ''}
-                onChange={onInputChange}
-              />
-            </div>
-          )}
-        </div>
-        <div className="space-y-4">
-          {!isSubDealer && (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Buyer ID 2
-                </label>
-                <Input
-                  type="text"
-                  name="buyer_id_2"
-                  value={formData.buyer_id_2 || ''}
-                  onChange={onInputChange}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Dealer Fee 2
-                </label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  name="dealer_fee_2"
-                  value={formData.dealer_fee_2 || ''}
-                  onChange={onInputChange}
-                />
-              </div>
-            </>
-          )}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Dealer Fee
-            </label>
-            <Input
-              type="number"
-              step="0.01"
-              name="dealer_fee"
-              value={formData.dealer_fee || ''}
-              onChange={onInputChange}
-            />
-          </div>
-          {!isSubDealer && (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Transportation Price
-                </label>
-                <Select 
-                  value={formData.transport_price_id?.toString() || "none"}
-                  onValueChange={(value) => onSelectChange('transport_price_id', value === "none" ? "" : value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select transportation price" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    {transportPrices && transportPrices.map(price => (
-                      <SelectItem key={price.id} value={price.id.toString()}>
-                        {price.port || price.city || 'Unnamed'} - ${price.price || 0}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Container Price
-                </label>
-                <Select 
-                  value={formData.container_price_id?.toString() || "none"}
-                  onValueChange={(value) => onSelectChange('container_price_id', value === "none" ? "" : value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select container price" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    {containerPrices && containerPrices.map(price => (
-                      <SelectItem key={price.id} value={price.id.toString()}>
-                        {price.port || price.vehicle_type || 'Unnamed'} - ${price.price || 0}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </>
-          )}
-        </div>
+        <BasicInfoFields
+          formData={formData}
+          onInputChange={onInputChange}
+          isSubDealer={isSubDealer}
+        />
+        
+        <PricingFields
+          formData={formData}
+          onInputChange={onInputChange}
+          onSelectChange={onSelectChange}
+          isSubDealer={isSubDealer}
+          transportPrices={transportPrices}
+          containerPrices={containerPrices}
+        />
       </div>
 
-      <DialogFooter className="mt-6">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onCancel}
-          disabled={isLoading}
-        >
-          Cancel
-        </Button>
-        <Button
-          type="submit"
-          disabled={isLoading}
-        >
-          {isLoading ? 'Saving...' : 'Save'}
-        </Button>
-      </DialogFooter>
+      <FormFooter 
+        isLoading={isLoading} 
+        onCancel={onCancel} 
+      />
     </form>
   );
 };
