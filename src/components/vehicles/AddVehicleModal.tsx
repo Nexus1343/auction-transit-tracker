@@ -1,5 +1,5 @@
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { z } from "zod"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -7,15 +7,18 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
+import { useManufacturers } from "@/pages/vehicles/hooks/useManufacturers"
+import { useModels } from "@/pages/vehicles/hooks/useModels"
 
 // Define form schema with Zod
 const vehicleFormSchema = z.object({
   vin: z.string().min(1, "VIN is required"),
   lotNumber: z.string().min(1, "Lot number is required"),
-  manufacturer: z.string().min(1, "Manufacturer is required"),
-  model: z.string().min(1, "Model is required"),
+  manufacturerId: z.string().min(1, "Manufacturer is required"),
+  modelId: z.string().min(1, "Model is required"),
   year: z.string().regex(/^\d{4}$/, "Year must be a 4-digit number"),
 })
 
@@ -30,6 +33,9 @@ interface AddVehicleModalProps {
 export function AddVehicleModal({ open, onOpenChange, onVehicleAdded }: AddVehicleModalProps) {
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const { data: manufacturers = [], isLoading: isLoadingManufacturers } = useManufacturers()
+  const [selectedManufacturerId, setSelectedManufacturerId] = useState<number | null>(null)
+  const { data: models = [], isLoading: isLoadingModels } = useModels(selectedManufacturerId)
 
   // Initialize form
   const form = useForm<VehicleFormValues>({
@@ -37,71 +43,32 @@ export function AddVehicleModal({ open, onOpenChange, onVehicleAdded }: AddVehic
     defaultValues: {
       vin: "",
       lotNumber: "",
-      manufacturer: "",
-      model: "",
+      manufacturerId: "",
+      modelId: "",
       year: new Date().getFullYear().toString(),
     },
   })
+
+  // Reset model when manufacturer changes
+  useEffect(() => {
+    if (form.getValues("manufacturerId") !== selectedManufacturerId?.toString()) {
+      form.setValue("modelId", "")
+    }
+  }, [selectedManufacturerId, form])
 
   // Form submission handler
   async function onSubmit(data: VehicleFormValues) {
     setIsSubmitting(true)
     
     try {
-      // Find or create manufacturer
-      let manufacturerId: number;
-      const { data: existingManufacturer } = await supabase
-        .from('manufacturers')
-        .select('id')
-        .eq('name', data.manufacturer)
-        .maybeSingle();
-      
-      if (existingManufacturer) {
-        manufacturerId = existingManufacturer.id;
-      } else {
-        const { data: newManufacturer, error: manufacturerError } = await supabase
-          .from('manufacturers')
-          .insert({ name: data.manufacturer })
-          .select('id')
-          .single();
-          
-        if (manufacturerError) throw manufacturerError;
-        manufacturerId = newManufacturer.id;
-      }
-      
-      // Find or create model
-      let modelId: number;
-      const { data: existingModel } = await supabase
-        .from('models')
-        .select('id')
-        .eq('name', data.model)
-        .eq('manufacturer_id', manufacturerId)
-        .maybeSingle();
-      
-      if (existingModel) {
-        modelId = existingModel.id;
-      } else {
-        const { data: newModel, error: modelError } = await supabase
-          .from('models')
-          .insert({ 
-            name: data.model,
-            manufacturer_id: manufacturerId 
-          })
-          .select('id')
-          .single();
-          
-        if (modelError) throw modelError;
-        modelId = newModel.id;
-      }
-      
       // Create vehicle record
       const { error: vehicleError } = await supabase
         .from('vehicles')
         .insert({
           vin: data.vin,
           lot_number: data.lotNumber,
-          manufacturer_id: manufacturerId,
-          model_id: modelId,
+          manufacturer_id: parseInt(data.manufacturerId),
+          model_id: parseInt(data.modelId),
           year: parseInt(data.year)
         });
       
@@ -171,13 +138,34 @@ export function AddVehicleModal({ open, onOpenChange, onVehicleAdded }: AddVehic
             
             <FormField
               control={form.control}
-              name="manufacturer"
+              name="manufacturerId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Manufacturer</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. Toyota, Honda" {...field} />
-                  </FormControl>
+                  <Select
+                    disabled={isLoadingManufacturers}
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      setSelectedManufacturerId(parseInt(value));
+                    }}
+                    value={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a manufacturer" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {manufacturers.map((manufacturer) => (
+                        <SelectItem 
+                          key={manufacturer.id} 
+                          value={manufacturer.id.toString()}
+                        >
+                          {manufacturer.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
@@ -185,13 +173,31 @@ export function AddVehicleModal({ open, onOpenChange, onVehicleAdded }: AddVehic
             
             <FormField
               control={form.control}
-              name="model"
+              name="modelId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Model</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. Camry, Civic" {...field} />
-                  </FormControl>
+                  <Select
+                    disabled={isLoadingModels || !selectedManufacturerId}
+                    onValueChange={field.onChange}
+                    value={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a model" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {models.map((model) => (
+                        <SelectItem 
+                          key={model.id} 
+                          value={model.id.toString()}
+                        >
+                          {model.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
