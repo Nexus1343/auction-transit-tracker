@@ -9,7 +9,7 @@ export const addSubDealer = async (subDealer: SubDealer): Promise<SubDealer | nu
       .from('sub_dealers')
       .insert({
         name: subDealer.name,
-        username: subDealer.username,
+        email: subDealer.email,
         password: subDealer.password,
         mobile: subDealer.mobile,
         dealer_fee: subDealer.dealer_fee || 0,
@@ -40,7 +40,7 @@ export const updateSubDealer = async (dealer: Dealer): Promise<Dealer | null> =>
       .from('sub_dealers')
       .update({
         name: dealer.name,
-        username: dealer.username,
+        email: dealer.email,
         password: dealer.password,
         mobile: dealer.mobile,
         dealer_fee: dealer.dealer_fee || 0,

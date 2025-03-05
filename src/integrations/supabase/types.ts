@@ -86,6 +86,7 @@ export type Database = {
           created_at: string | null
           dealer_fee: number | null
           dealer_fee_2: number | null
+          email: string | null
           id: number
           mobile: string | null
           name: string
@@ -93,7 +94,6 @@ export type Database = {
           transport_price_id: number | null
           updated_at: string | null
           user_id: number | null
-          username: string | null
         }
         Insert: {
           buyer_id?: string | null
@@ -102,6 +102,7 @@ export type Database = {
           created_at?: string | null
           dealer_fee?: number | null
           dealer_fee_2?: number | null
+          email?: string | null
           id?: number
           mobile?: string | null
           name: string
@@ -109,7 +110,6 @@ export type Database = {
           transport_price_id?: number | null
           updated_at?: string | null
           user_id?: number | null
-          username?: string | null
         }
         Update: {
           buyer_id?: string | null
@@ -118,6 +118,7 @@ export type Database = {
           created_at?: string | null
           dealer_fee?: number | null
           dealer_fee_2?: number | null
+          email?: string | null
           id?: number
           mobile?: string | null
           name?: string
@@ -125,7 +126,6 @@ export type Database = {
           transport_price_id?: number | null
           updated_at?: string | null
           user_id?: number | null
-          username?: string | null
         }
         Relationships: [
           {
@@ -516,34 +516,34 @@ export type Database = {
           created_at: string | null
           dealer_fee: number | null
           dealer_id: number | null
+          email: string | null
           id: number
           mobile: string | null
           name: string
           password: string | null
           updated_at: string | null
-          username: string | null
         }
         Insert: {
           created_at?: string | null
           dealer_fee?: number | null
           dealer_id?: number | null
+          email?: string | null
           id?: number
           mobile?: string | null
           name: string
           password?: string | null
           updated_at?: string | null
-          username?: string | null
         }
         Update: {
           created_at?: string | null
           dealer_fee?: number | null
           dealer_id?: number | null
+          email?: string | null
           id?: number
           mobile?: string | null
           name?: string
           password?: string | null
           updated_at?: string | null
-          username?: string | null
         }
         Relationships: [
           {

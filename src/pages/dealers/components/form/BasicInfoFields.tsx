@@ -26,12 +26,12 @@ const BasicInfoFields = ({ formData, onInputChange, isSubDealer }: BasicInfoFiel
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          Username (Email)
+          Email
         </label>
         <Input
-          type="text"
-          name="username"
-          value={formData.username || ''}
+          type="email"
+          name="email"
+          value={formData.email || ''}
           onChange={onInputChange}
         />
       </div>

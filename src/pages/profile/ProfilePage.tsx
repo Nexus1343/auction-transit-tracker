@@ -22,7 +22,6 @@ const ProfilePage = () => {
     id: 0,
     name: '',
     email: '',
-    username: '',
     password: '********',
     mobile: '',
     buyer_id: '',
@@ -82,7 +81,6 @@ const ProfilePage = () => {
             id: dealerData?.id || 0,
             name: userProfile.name || '',
             email: userProfile.email || '',
-            username: dealerData?.username || '',
             password: '********',
             mobile: userProfile.mobile || dealerData?.mobile || '',
             buyer_id: dealerData?.buyer_id || '',
@@ -156,7 +154,6 @@ const ProfilePage = () => {
         const { error: dealerError } = await supabase
           .from('dealers')
           .update({
-            username: profileData.username,
             mobile: profileData.mobile,
             buyer_id: profileData.buyer_id,
             buyer_id_2: profileData.buyer_id_2,
@@ -360,20 +357,6 @@ const ProfilePage = () => {
                     disabled={true} // Email should not be editable as it's tied to auth
                   />
                 </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Username
-                </label>
-                <input
-                  type="text"
-                  name="username"
-                  className="w-full p-2 border rounded-lg"
-                  value={profileData.username}
-                  onChange={handleChange}
-                  disabled={!isEditing}
-                />
               </div>
               
               <div>

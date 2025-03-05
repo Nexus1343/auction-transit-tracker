@@ -2,7 +2,7 @@
 export interface Dealer {
   id?: number;
   name: string;
-  username: string | null;
+  email: string | null;
   password: string | null;
   mobile: string | null;
   buyer_id: string | null;
@@ -20,7 +20,7 @@ export interface Dealer {
 export interface SubDealer {
   id?: number;
   name: string;
-  username: string | null;
+  email: string | null;
   password: string | null;
   mobile: string | null;
   dealer_fee: number | null;

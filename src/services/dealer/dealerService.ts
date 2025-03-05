@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Dealer } from "./types";
@@ -29,7 +28,7 @@ export const addDealer = async (dealer: Dealer): Promise<Dealer | null> => {
       .from('dealers')
       .insert({
         name: dealer.name,
-        username: dealer.username,
+        email: dealer.email,
         password: dealer.password,
         mobile: dealer.mobile,
         buyer_id: dealer.buyer_id,
@@ -71,7 +70,7 @@ export const updateDealer = async (dealer: Dealer): Promise<Dealer | null> => {
         .from('dealers')
         .update({
           name: dealer.name,
-          username: dealer.username,
+          email: dealer.email,
           password: dealer.password,
           mobile: dealer.mobile,
           buyer_id: dealer.buyer_id,
