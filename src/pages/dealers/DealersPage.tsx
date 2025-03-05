@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, FormEvent } from 'react';
 import { 
   Plus, 
   Download, 
@@ -22,86 +22,155 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
+import { toast } from "sonner";
+
+import { 
+  Dealer, 
+  SubDealer,
+  fetchDealers, 
+  addDealer, 
+  updateDealer, 
+  deleteDealer,
+  fetchTransportPrices,
+  fetchContainerPrices
+} from "../../services/dealerService";
 
 const DealersPage = () => {
   const [activeView, setActiveView] = useState('table'); // 'table' or 'hierarchy'
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedDealer, setSelectedDealer] = useState<any>(null);
+  const [selectedDealer, setSelectedDealer] = useState<Dealer | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [dealers, setDealers] = useState<Dealer[]>([]);
+  const [transportPrices, setTransportPrices] = useState<any[]>([]);
+  const [containerPrices, setContainerPrices] = useState<any[]>([]);
+  
+  // Form state
+  const [formData, setFormData] = useState<Dealer>({
+    name: '',
+    username: '',
+    password: '',
+    mobile: '',
+    buyer_id: '',
+    buyer_id_2: '',
+    dealer_fee: 0,
+    dealer_fee_2: 0,
+    transport_price_id: null,
+    container_price_id: null
+  });
 
-  // Sample data - replace with your actual data
-  const dealers = [
-    {
-      id: 133,
-      name: 'Mirian kazaishvili',
-      username: 'Mkazaishvili@americars.ge',
-      password: 'mk123',
-      mobile: '',
-      buyer_id: 'Atlantic',
-      buyer_id_2: 'Atlantic',
-      dealer_fee: 290.00,
-      dealer_fee_2: 350.00,
-      transport_price_id: 1,
-      container_price_id: 2,
-      subDealers: []
-    },
-    {
-      id: 132,
-      name: 'Dealer1',
-      username: 'Dealer1@americars.ge',
-      password: 'dealer1',
-      mobile: '',
-      buyer_id: 'Atlantic',
-      buyer_id_2: 'Atlantic',
-      dealer_fee: 390.00,
-      dealer_fee_2: 410.00,
-      transport_price_id: 3,
-      container_price_id: 1,
-      subDealers: []
-    },
-    {
-      id: 131,
-      name: 'Giga Chumburidze',
-      username: 'gigachumburidze@americars.ge',
-      password: 'giga123',
-      mobile: '577038877',
-      buyer_id: 'Atlantic',
-      buyer_id_2: 'Atlantic',
-      dealer_fee: 650.00,
-      dealer_fee_2: 700.00,
-      transport_price_id: 2,
-      container_price_id: 3,
-      subDealers: [
-        {
-          id: 134,
-          name: 'Makho Khidasheli',
-          username: 'makhok@americars.ge',
-          dealer_fee: 420.00
-        },
-        {
-          id: 135,
-          name: 'Giorgi didebashvili',
-          username: 'giorgid@americars.ge',
-          dealer_fee: 490.00
-        }
-      ]
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    // Reset form when selected dealer changes
+    if (selectedDealer) {
+      setFormData({
+        id: selectedDealer.id,
+        name: selectedDealer.name,
+        username: selectedDealer.username || '',
+        password: selectedDealer.password || '',
+        mobile: selectedDealer.mobile || '',
+        buyer_id: selectedDealer.buyer_id || '',
+        buyer_id_2: selectedDealer.buyer_id_2 || '',
+        dealer_fee: selectedDealer.dealer_fee || 0,
+        dealer_fee_2: selectedDealer.dealer_fee_2 || 0,
+        transport_price_id: selectedDealer.transport_price_id,
+        container_price_id: selectedDealer.container_price_id
+      });
+    } else {
+      // Reset form for new dealer
+      setFormData({
+        name: '',
+        username: '',
+        password: '',
+        mobile: '',
+        buyer_id: '',
+        buyer_id_2: '',
+        dealer_fee: 0,
+        dealer_fee_2: 0,
+        transport_price_id: null,
+        container_price_id: null
+      });
     }
-  ];
+  }, [selectedDealer]);
 
-  // Sample data for dropdowns
-  const transportPrices = [
-    { id: 1, name: 'Standard Transport' },
-    { id: 2, name: 'Express Transport' },
-    { id: 3, name: 'Economy Transport' }
-  ];
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      const [dealersData, transportData, containerData] = await Promise.all([
+        fetchDealers(),
+        fetchTransportPrices(),
+        fetchContainerPrices()
+      ]);
+      
+      setDealers(dealersData);
+      setTransportPrices(transportData);
+      setContainerPrices(containerData);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      toast.error('Failed to load data');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const containerPrices = [
-    { id: 1, name: 'Standard Container' },
-    { id: 2, name: 'Large Container' },
-    { id: 3, name: 'Premium Container' }
-  ];
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type } = e.target;
+    
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'number' ? (value === '' ? null : parseFloat(value)) : value
+    }));
+  };
 
-  const renderHierarchyItem = (dealer: any, level = 0) => {
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [name]: value === '' ? null : parseInt(value)
+    }));
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    try {
+      if (selectedDealer) {
+        // Update existing dealer
+        await updateDealer(formData);
+      } else {
+        // Add new dealer
+        await addDealer(formData);
+      }
+      
+      // Reload data after update
+      await loadData();
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error('Error saving dealer:', error);
+      toast.error('Failed to save dealer');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteDealer = async (id: number) => {
+    if (window.confirm('Are you sure you want to delete this dealer?')) {
+      setIsLoading(true);
+      try {
+        await deleteDealer(id);
+        await loadData();
+      } catch (error) {
+        console.error('Error deleting dealer:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  const renderHierarchyItem = (dealer: Dealer, level = 0) => {
     const hasSubDealers = dealer.subDealers && dealer.subDealers.length > 0;
     
     return (
@@ -126,13 +195,16 @@ const DealersPage = () => {
             <div className="text-sm text-gray-500">{dealer.username}</div>
           </div>
           <div className="text-sm text-gray-500">
-            ${dealer.dealer_fee.toFixed(2)}
+            ${dealer.dealer_fee ? dealer.dealer_fee.toFixed(2) : '0.00'}
           </div>
         </div>
         {hasSubDealers && (
           <div className="border-l-2 border-gray-100 ml-3">
-            {dealer.subDealers.map((subDealer: any) => 
-              renderHierarchyItem(subDealer, level + 1)
+            {dealer.subDealers.map((subDealer: SubDealer) => 
+              renderHierarchyItem({
+                ...subDealer,
+                subDealers: []
+              }, level + 1)
             )}
           </div>
         )}
@@ -176,6 +248,7 @@ const DealersPage = () => {
                 setIsModalOpen(true);
               }}
               className="flex items-center space-x-2"
+              disabled={isLoading}
             >
               <Plus className="w-4 h-4" />
               <span>Add Dealer</span>
@@ -205,15 +278,24 @@ const DealersPage = () => {
             <Button variant="outline" size="icon">
               <Download className="w-4 h-4" />
             </Button>
-            <Button variant="outline" size="icon">
-              <RotateCw className="w-4 h-4" />
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={loadData} 
+              disabled={isLoading}
+            >
+              <RotateCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
             </Button>
           </div>
         </div>
 
         {/* Content */}
         <div className="p-4">
-          {activeView === 'table' ? (
+          {isLoading ? (
+            <div className="flex justify-center items-center py-10">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-900"></div>
+            </div>
+          ) : activeView === 'table' ? (
             <table className="w-full">
               <thead>
                 <tr className="border-b">
@@ -229,7 +311,7 @@ const DealersPage = () => {
                 {dealers
                   .filter(dealer => 
                     dealer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    dealer.username.toLowerCase().includes(searchTerm.toLowerCase())
+                    (dealer.username && dealer.username.toLowerCase().includes(searchTerm.toLowerCase()))
                   )
                   .map(dealer => (
                     <tr key={dealer.id} className="border-b hover:bg-gray-50">
@@ -251,7 +333,9 @@ const DealersPage = () => {
                       </td>
                       <td className="px-4 py-3 text-gray-600">{dealer.mobile || '-'}</td>
                       <td className="px-4 py-3 text-gray-600">{dealer.buyer_id}</td>
-                      <td className="px-4 py-3 text-gray-600">${dealer.dealer_fee.toFixed(2)}</td>
+                      <td className="px-4 py-3 text-gray-600">
+                        ${dealer.dealer_fee ? dealer.dealer_fee.toFixed(2) : '0.00'}
+                      </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end space-x-2">
                           <Button 
@@ -264,7 +348,11 @@ const DealersPage = () => {
                           >
                             <Edit2 className="w-4 h-4 text-gray-400" />
                           </Button>
-                          <Button variant="ghost" size="icon">
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => dealer.id && handleDeleteDealer(dealer.id)}
+                          >
                             <Trash2 className="w-4 h-4 text-gray-400" />
                           </Button>
                         </div>
@@ -278,7 +366,7 @@ const DealersPage = () => {
               {dealers
                 .filter(dealer => 
                   dealer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  dealer.username.toLowerCase().includes(searchTerm.toLowerCase())
+                  (dealer.username && dealer.username.toLowerCase().includes(searchTerm.toLowerCase()))
                 )
                 .map(dealer => renderHierarchyItem(dealer))}
             </div>
@@ -295,134 +383,165 @@ const DealersPage = () => {
             </DialogTitle>
           </DialogHeader>
           
-          <div className="grid grid-cols-2 gap-6 mt-4">
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Dealer Name
-                </label>
-                <Input
-                  type="text"
-                  defaultValue={selectedDealer?.name}
-                />
+          <form onSubmit={handleSubmit}>
+            <div className="grid grid-cols-2 gap-6 mt-4">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Dealer Name
+                  </label>
+                  <Input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Username (Email)
+                  </label>
+                  <Input
+                    type="text"
+                    name="username"
+                    value={formData.username || ''}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Password
+                  </label>
+                  <Input
+                    type="password"
+                    name="password"
+                    value={formData.password || ''}
+                    onChange={handleInputChange}
+                    placeholder={selectedDealer ? "••••••••" : ""}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Mobile
+                  </label>
+                  <Input
+                    type="text"
+                    name="mobile"
+                    value={formData.mobile || ''}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Buyer ID
+                  </label>
+                  <Input
+                    type="text"
+                    name="buyer_id"
+                    value={formData.buyer_id || ''}
+                    onChange={handleInputChange}
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Username (Email)
-                </label>
-                <Input
-                  type="text"
-                  defaultValue={selectedDealer?.username}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Password
-                </label>
-                <Input
-                  type="password"
-                  defaultValue={selectedDealer?.password}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Mobile
-                </label>
-                <Input
-                  type="text"
-                  defaultValue={selectedDealer?.mobile}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Buyer ID
-                </label>
-                <Input
-                  type="text"
-                  defaultValue={selectedDealer?.buyer_id}
-                />
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Buyer ID 2
+                  </label>
+                  <Input
+                    type="text"
+                    name="buyer_id_2"
+                    value={formData.buyer_id_2 || ''}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Dealer Fee
+                  </label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    name="dealer_fee"
+                    value={formData.dealer_fee || ''}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Dealer Fee 2
+                  </label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    name="dealer_fee_2"
+                    value={formData.dealer_fee_2 || ''}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Transportation Price
+                  </label>
+                  <Select 
+                    value={formData.transport_price_id?.toString() || ""}
+                    onValueChange={(value) => handleSelectChange('transport_price_id', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select transportation price" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">None</SelectItem>
+                      {transportPrices.map(price => (
+                        <SelectItem key={price.id} value={price.id.toString()}>
+                          {price.port || price.city} - ${price.price}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Container Price
+                  </label>
+                  <Select 
+                    value={formData.container_price_id?.toString() || ""}
+                    onValueChange={(value) => handleSelectChange('container_price_id', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select container price" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">None</SelectItem>
+                      {containerPrices.map(price => (
+                        <SelectItem key={price.id} value={price.id.toString()}>
+                          {price.port || price.vehicle_type} - ${price.price}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Buyer ID 2
-                </label>
-                <Input
-                  type="text"
-                  defaultValue={selectedDealer?.buyer_id_2}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Dealer Fee
-                </label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  defaultValue={selectedDealer?.dealer_fee}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Dealer Fee 2
-                </label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  defaultValue={selectedDealer?.dealer_fee_2}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Transportation Price
-                </label>
-                <Select defaultValue={selectedDealer?.transport_price_id?.toString()}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select transportation price" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {transportPrices.map(price => (
-                      <SelectItem key={price.id} value={price.id.toString()}>
-                        {price.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Container Price
-                </label>
-                <Select defaultValue={selectedDealer?.container_price_id?.toString()}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select container price" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {containerPrices.map(price => (
-                      <SelectItem key={price.id} value={price.id.toString()}>
-                        {price.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
 
-          <DialogFooter className="mt-6">
-            <Button
-              variant="outline"
-              onClick={() => setIsModalOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => setIsModalOpen(false)}
-            >
-              Save
-            </Button>
-          </DialogFooter>
+            <DialogFooter className="mt-6">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsModalOpen(false)}
+                disabled={isLoading}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isLoading}
+              >
+                {isLoading ? 'Saving...' : 'Save'}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
