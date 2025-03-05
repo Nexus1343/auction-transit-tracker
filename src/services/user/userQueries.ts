@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { User, UserRole } from './types';
+import { User, UserRole, UserStatus } from './types';
 
 export const fetchUsers = async (): Promise<User[]> => {
   try {
