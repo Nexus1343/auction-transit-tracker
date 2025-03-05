@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Users, 
@@ -20,7 +19,6 @@ const UserManagementPage = () => {
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [showPassword, setShowPassword] = useState(false);
   
-  // Sample data
   const users = [
     {
       id: 1,
@@ -45,7 +43,7 @@ const UserManagementPage = () => {
       name: 'Giga Chumburidze',
       email: 'gigachumburidze@americars.ge',
       mobile: '577038877',
-      role: 'Super Dealer',
+      role: 'Admin',
       status: 'Active',
       lastLogin: '2025-03-02 11:22:05'
     },
@@ -54,7 +52,7 @@ const UserManagementPage = () => {
       name: 'Zviad Wulukidze',
       email: 'zwulukidze@americars.ge',
       mobile: '+995 599-123-456',
-      role: 'Dealer',
+      role: 'Regular User',
       status: 'Inactive',
       lastLogin: '2025-02-15 08:45:19'
     },
@@ -63,7 +61,7 @@ const UserManagementPage = () => {
       name: 'Makho Khidasheli',
       email: 'makhok@americars.ge',
       mobile: '+995 577-345-678',
-      role: 'Sub Dealer',
+      role: 'Regular User',
       status: 'Active',
       lastLogin: '2025-03-03 10:17:36'
     },
@@ -72,7 +70,7 @@ const UserManagementPage = () => {
       name: 'Giorgi Didebashvili',
       email: 'giorgid@americars.ge',
       mobile: '+995 591-234-567',
-      role: 'Sub Dealer',
+      role: 'Regular User',
       status: 'Active',
       lastLogin: '2025-03-01 08:20:11'
     }
@@ -100,13 +98,11 @@ const UserManagementPage = () => {
 
   return (
     <div className="p-6 bg-gray-50">
-      {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
         <p className="text-gray-600">Manage system users, roles, and permissions</p>
       </div>
 
-      {/* User Table */}
       <div className="bg-white rounded-lg shadow">
         <div className="p-4 border-b flex items-center justify-between">
           <div className="flex items-center space-x-2">
@@ -173,8 +169,6 @@ const UserManagementPage = () => {
                     <span className={`px-2 py-1 text-xs rounded-full ${
                       user.role === 'Admin' ? 'bg-blue-100 text-blue-800' :
                       user.role === 'Regular User' ? 'bg-purple-100 text-purple-800' :
-                      user.role === 'Super Dealer' ? 'bg-green-100 text-green-800' :
-                      user.role === 'Dealer' ? 'bg-orange-100 text-orange-800' :
                       'bg-gray-100 text-gray-800'
                     }`}>
                       {user.role}
@@ -208,7 +202,6 @@ const UserManagementPage = () => {
           </table>
         </div>
 
-        {/* Pagination */}
         <div className="p-4 border-t flex items-center justify-between">
           <div className="text-sm text-gray-500">
             Showing 1 to {getFilteredUsers().length} of {getFilteredUsers().length} entries
@@ -221,7 +214,6 @@ const UserManagementPage = () => {
         </div>
       </div>
 
-      {/* Add/Edit User Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl">
@@ -273,17 +265,11 @@ const UserManagementPage = () => {
                   <select 
                     className="w-full p-2 border rounded-lg"
                     defaultValue={selectedUser?.role === 'Admin' ? 'admin' : 
-                                selectedUser?.role === 'Regular User' ? 'regularUser' :
-                                selectedUser?.role === 'Super Dealer' ? 'superDealer' :
-                                selectedUser?.role === 'Dealer' ? 'dealer' :
-                                selectedUser?.role === 'Sub Dealer' ? 'subDealer' : ''}
+                                selectedUser?.role === 'Regular User' ? 'regularUser' : ''}
                   >
                     <option value="">Select Role</option>
                     <option value="admin">Admin</option>
                     <option value="regularUser">Regular User</option>
-                    <option value="superDealer">Super Dealer</option>
-                    <option value="dealer">Dealer</option>
-                    <option value="subDealer">Sub Dealer</option>
                   </select>
                 </div>
                 <div>
