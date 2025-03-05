@@ -1,18 +1,8 @@
 
+import { PostgrestError } from "@supabase/supabase-js";
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
 
-export interface UserRole {
-  id: number;
-  name: string;
-  permissions: {
-    [key: string]: {
-      read: boolean;
-      write: boolean;
-      delete?: boolean;
-    };
-  };
-}
+export type UserStatus = 'Active' | 'Inactive';
 
 export interface User {
   id: number;
@@ -20,10 +10,24 @@ export interface User {
   name: string;
   email: string;
   mobile?: string;
-  role_id?: number;
-  role?: string;
-  status?: 'Active' | 'Inactive';
+  role_id: number;
+  role: string;
+  status: UserStatus;
   lastLogin?: string;
+}
+
+export interface UserRole {
+  id: number;
+  name: string;
+  permissions: Record<string, { read: boolean; write: boolean; delete?: boolean }>;
+  created_at?: string;
+  updated_at?: string;
+}
+
+interface APIResponse {
+  success: boolean;
+  message: string;
+  data?: any;
 }
 
 export const fetchUsers = async (): Promise<User[]> => {
@@ -31,22 +35,17 @@ export const fetchUsers = async (): Promise<User[]> => {
     const { data: users, error } = await supabase
       .from('user_profile')
       .select(`
-        id,
-        auth_id,
-        name,
-        email,
-        mobile,
-        role_id,
-        app_roles(name)
-      `)
-      .order('name');
+        *,
+        app_roles (
+          id,
+          name,
+          permissions
+        )
+      `);
 
     if (error) throw error;
 
-    // Fetch last sign in data from auth.users
-    const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
-    
-    const transformedUsers = users.map(user => ({
+    return users.map((user: any) => ({
       id: user.id,
       auth_id: user.auth_id,
       name: user.name,
@@ -54,11 +53,9 @@ export const fetchUsers = async (): Promise<User[]> => {
       mobile: user.mobile || '',
       role_id: user.role_id,
       role: user.app_roles?.name || 'Regular User',
-      status: 'Active', // Default, could be fetched from auth users if needed
-      lastLogin: authUsers?.users?.find(au => au.id === user.auth_id)?.last_sign_in_at || ''
-    }));
-
-    return transformedUsers;
+      status: (user.status || 'Active') as UserStatus,
+      lastLogin: user.last_login_at || ''
+    })) as User[];
   } catch (error) {
     console.error('Error fetching users:', error);
     return [];
@@ -69,30 +66,32 @@ export const fetchRoles = async (): Promise<UserRole[]> => {
   try {
     const { data, error } = await supabase
       .from('app_roles')
-      .select('*')
-      .order('id');
+      .select('*');
 
     if (error) throw error;
-    return data;
+
+    return data.map((role: any) => ({
+      id: role.id,
+      name: role.name,
+      permissions: typeof role.permissions === 'string' 
+        ? JSON.parse(role.permissions) 
+        : role.permissions,
+      created_at: role.created_at,
+      updated_at: role.updated_at
+    })) as UserRole[];
   } catch (error) {
     console.error('Error fetching roles:', error);
     return [];
   }
 };
 
-export const addUser = async (userData: {
-  name: string;
-  email: string;
-  password: string;
-  mobile?: string;
-  role_id: number;
-}): Promise<{ success: boolean; message: string; user?: User }> => {
+export const addUser = async (userData: Omit<User, 'id' | 'role' | 'status'> & { password: string }): Promise<APIResponse> => {
   try {
-    // First create the auth user
+    // Create auth user
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email: userData.email,
       password: userData.password,
-      email_confirm: true, // Auto-confirm the email
+      email_confirm: true,
       user_metadata: {
         name: userData.name
       }
@@ -100,126 +99,111 @@ export const addUser = async (userData: {
 
     if (authError) throw authError;
 
-    // The user profile should be created automatically by the database trigger,
-    // but we need to update it with the role_id
-    const { data: profileData, error: profileError } = await supabase
+    // Add role_id and other details
+    const { error: profileError } = await supabase
       .from('user_profile')
-      .update({
-        name: userData.name,
-        mobile: userData.mobile,
-        role_id: userData.role_id
+      .update({ 
+        role_id: userData.role_id,
+        mobile: userData.mobile 
       })
-      .eq('auth_id', authData.user.id)
-      .select('*');
+      .eq('auth_id', authData.user.id);
 
     if (profileError) throw profileError;
-
-    const { data: roleData } = await supabase
-      .from('app_roles')
-      .select('name')
-      .eq('id', userData.role_id)
-      .single();
 
     return {
       success: true,
-      message: 'User created successfully',
-      user: {
-        id: profileData[0].id,
-        auth_id: authData.user.id,
-        name: userData.name,
-        email: userData.email,
-        mobile: userData.mobile,
-        role_id: userData.role_id,
-        role: roleData?.name || 'Regular User',
-        status: 'Active'
-      }
+      message: 'User created successfully'
     };
   } catch (error: any) {
     console.error('Error adding user:', error);
-    return { success: false, message: error.message || 'Failed to create user' };
+    return {
+      success: false,
+      message: error.message || 'An error occurred while creating user'
+    };
   }
 };
 
-export const updateUser = async (
-  userId: number,
-  userData: Partial<{
-    name: string;
-    email: string;
-    password: string;
-    mobile: string;
-    role_id: number;
-    status: 'Active' | 'Inactive';
-  }>
-): Promise<{ success: boolean; message: string }> => {
+export const updateUser = async (id: number, userData: Partial<User> & { password?: string }): Promise<APIResponse> => {
   try {
-    // Get the auth_id from user_profile
-    const { data: profileData, error: profileError } = await supabase
+    // Get auth_id from user_profile
+    const { data: userData2, error: userError } = await supabase
       .from('user_profile')
       .select('auth_id')
-      .eq('id', userId)
+      .eq('id', id)
       .single();
 
-    if (profileError) throw profileError;
+    if (userError) throw userError;
 
-    // Update auth user if needed
+    const updates: Record<string, any> = {};
+    
+    // Update auth user if email or password changed
     if (userData.email || userData.password) {
-      const authUpdates: any = {};
+      const authUpdates: Record<string, any> = {};
+      
       if (userData.email) authUpdates.email = userData.email;
       if (userData.password) authUpdates.password = userData.password;
-
+      
       const { error: authError } = await supabase.auth.admin.updateUserById(
-        profileData.auth_id,
+        userData2.auth_id,
         authUpdates
       );
 
       if (authError) throw authError;
     }
 
-    // Update profile data
-    const profileUpdates: any = {};
-    if (userData.name) profileUpdates.name = userData.name;
-    if (userData.mobile) profileUpdates.mobile = userData.mobile;
-    if (userData.role_id) profileUpdates.role_id = userData.role_id;
+    // Update user profile
+    if (userData.name) updates.name = userData.name;
+    if (userData.mobile !== undefined) updates.mobile = userData.mobile;
+    if (userData.role_id) updates.role_id = userData.role_id;
+    if (userData.status) updates.status = userData.status;
 
-    if (Object.keys(profileUpdates).length > 0) {
-      const { error: updateError } = await supabase
+    if (Object.keys(updates).length > 0) {
+      const { error: profileError } = await supabase
         .from('user_profile')
-        .update(profileUpdates)
-        .eq('id', userId);
+        .update(updates)
+        .eq('id', id);
 
-      if (updateError) throw updateError;
+      if (profileError) throw profileError;
     }
 
-    return { success: true, message: 'User updated successfully' };
+    return {
+      success: true,
+      message: 'User updated successfully'
+    };
   } catch (error: any) {
     console.error('Error updating user:', error);
-    return { success: false, message: error.message || 'Failed to update user' };
+    return {
+      success: false,
+      message: error.message || 'An error occurred while updating user'
+    };
   }
 };
 
-export const deleteUser = async (userId: number): Promise<{ success: boolean; message: string }> => {
+export const deleteUser = async (id: number): Promise<APIResponse> => {
   try {
-    // Get the auth_id from user_profile
-    const { data: profileData, error: profileError } = await supabase
+    // Get auth_id from user_profile
+    const { data: userData, error: userError } = await supabase
       .from('user_profile')
       .select('auth_id')
-      .eq('id', userId)
+      .eq('id', id)
       .single();
 
-    if (profileError) throw profileError;
+    if (userError) throw userError;
 
-    // Delete the auth user
-    const { error: authError } = await supabase.auth.admin.deleteUser(
-      profileData.auth_id
-    );
+    // Delete auth user (this will cascade to user_profile due to RLS)
+    const { error: authError } = await supabase.auth.admin.deleteUser(userData.auth_id);
 
     if (authError) throw authError;
 
-    // The profile should be deleted automatically by the cascade delete
-
-    return { success: true, message: 'User deleted successfully' };
+    return {
+      success: true,
+      message: 'User deleted successfully'
+    };
   } catch (error: any) {
     console.error('Error deleting user:', error);
-    return { success: false, message: error.message || 'Failed to delete user' };
+    return {
+      success: false,
+      message: error.message || 'An error occurred while deleting user'
+    };
   }
 };
