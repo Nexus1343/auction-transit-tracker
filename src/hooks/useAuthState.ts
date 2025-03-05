@@ -25,7 +25,7 @@ export const useAuthState = () => {
           )
         `)
         .eq('auth_id', userId)
-        .single();
+        .maybeSingle();
 
       if (userError) {
         console.error('Error fetching user role:', userError);
@@ -40,7 +40,6 @@ export const useAuthState = () => {
         
         console.log('Role data:', roleData);
         console.log('Role name:', roleName);
-        console.log('Role permissions (raw):', roleData.permissions);
         
         setUserRole(roleName);
         
@@ -71,45 +70,65 @@ export const useAuthState = () => {
         console.log('Final processed permissions:', rolePermissions);
         setPermissions(rolePermissions);
       } else {
+        // Set default values even if no role information is available
         console.warn('No roles found for user', userId);
         setUserRole('User');
         setPermissions({
           '': { read: true, write: false, delete: false }
         });
       }
+      
+      // Important: Always set loading to false here, regardless of role fetch result
+      setIsLoading(false);
     } catch (error) {
       console.error('Error in fetchUserRole:', error);
+      // Default values on error and stop loading
+      setUserRole('User');
+      setPermissions({
+        '': { read: true, write: false, delete: false }
+      });
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
     const setupAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      setUser(session?.user || null);
-      
-      if (session?.user) {
-        await fetchUserRole(session.user.id);
-      }
-      
-      setIsLoading(false);
-    };
-
-    setupAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
         setSession(session);
         setUser(session?.user || null);
         
         if (session?.user) {
           await fetchUserRole(session.user.id);
         } else {
-          setUserRole(null);
-          setPermissions({});
+          // No user is logged in, set loading to false
+          setIsLoading(false);
         }
-        
+      } catch (error) {
+        console.error('Error in setupAuth:', error);
         setIsLoading(false);
+      }
+    };
+
+    setupAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        try {
+          setSession(session);
+          setUser(session?.user || null);
+          
+          if (session?.user) {
+            await fetchUserRole(session.user.id);
+          } else {
+            setUserRole(null);
+            setPermissions({});
+            setIsLoading(false);
+          }
+        } catch (error) {
+          console.error('Error in onAuthStateChange:', error);
+          setIsLoading(false);
+        }
       }
     );
 
