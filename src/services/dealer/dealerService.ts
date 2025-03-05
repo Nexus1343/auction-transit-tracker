@@ -1,32 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-
-export interface Dealer {
-  id?: number;
-  name: string;
-  username: string | null;
-  password: string | null;
-  mobile: string | null;
-  buyer_id: string | null;
-  buyer_id_2: string | null;
-  dealer_fee: number | null;
-  dealer_fee_2: number | null;
-  transport_price_id: number | null;
-  container_price_id: number | null;
-  subDealers?: SubDealer[];
-  dealer_id?: number | null;
-}
-
-export interface SubDealer {
-  id?: number;
-  name: string;
-  username: string | null;
-  password: string | null;
-  mobile: string | null;
-  dealer_fee: number | null;
-  dealer_id?: number | null;
-}
+import { Dealer } from "./types";
 
 export const fetchDealers = async (): Promise<Dealer[]> => {
   try {
@@ -78,32 +53,6 @@ export const addDealer = async (dealer: Dealer): Promise<Dealer | null> => {
   }
 };
 
-export const addSubDealer = async (subDealer: SubDealer): Promise<SubDealer | null> => {
-  try {
-    const { data, error } = await supabase
-      .from('sub_dealers')
-      .insert({
-        name: subDealer.name,
-        username: subDealer.username,
-        password: subDealer.password,
-        mobile: subDealer.mobile,
-        dealer_fee: subDealer.dealer_fee || 0,
-        dealer_id: subDealer.dealer_id
-      })
-      .select()
-      .single();
-    
-    if (error) throw error;
-    
-    toast.success('Sub-dealer added successfully');
-    return data;
-  } catch (error: any) {
-    console.error('Error adding sub-dealer:', error);
-    toast.error('Failed to add sub-dealer');
-    return null;
-  }
-};
-
 export const updateDealer = async (dealer: Dealer): Promise<Dealer | null> => {
   if (!dealer.id) {
     toast.error('Dealer ID is required for updating');
@@ -113,32 +62,9 @@ export const updateDealer = async (dealer: Dealer): Promise<Dealer | null> => {
   try {
     // Check if this is a sub-dealer by checking dealer_id
     if (dealer.dealer_id) {
-      // This is a sub-dealer, update in sub_dealers table
-      const { data, error } = await supabase
-        .from('sub_dealers')
-        .update({
-          name: dealer.name,
-          username: dealer.username,
-          password: dealer.password,
-          mobile: dealer.mobile,
-          dealer_fee: dealer.dealer_fee || 0,
-          dealer_id: dealer.dealer_id
-        })
-        .eq('id', dealer.id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      
-      toast.success('Sub-dealer updated successfully');
-      return {
-        ...data,
-        buyer_id: null,
-        buyer_id_2: null,
-        dealer_fee_2: null,
-        transport_price_id: null,
-        container_price_id: null
-      };
+      // This is a sub-dealer, use subDealerService to update it
+      const { updateSubDealer } = await import('./subDealerService');
+      return updateSubDealer(dealer);
     } else {
       // This is a regular dealer
       const { data, error } = await supabase
@@ -186,35 +112,5 @@ export const deleteDealer = async (id: number): Promise<boolean> => {
     console.error('Error deleting dealer:', error);
     toast.error('Failed to delete dealer');
     return false;
-  }
-};
-
-export const fetchTransportPrices = async () => {
-  try {
-    const { data, error } = await supabase
-      .from('transport_prices')
-      .select('*');
-    
-    if (error) throw error;
-    return data;
-  } catch (error: any) {
-    console.error('Error fetching transport prices:', error);
-    toast.error('Failed to load transport prices');
-    return [];
-  }
-};
-
-export const fetchContainerPrices = async () => {
-  try {
-    const { data, error } = await supabase
-      .from('container_prices')
-      .select('*');
-    
-    if (error) throw error;
-    return data;
-  } catch (error: any) {
-    console.error('Error fetching container prices:', error);
-    toast.error('Failed to load container prices');
-    return [];
   }
 };

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   Dialog,
@@ -7,7 +6,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import DealerForm from './DealerForm';
-import { Dealer } from "../../../services/dealerService";
+import { Dealer } from "../../../services/dealer";
 
 interface DealerDialogProps {
   isOpen: boolean;

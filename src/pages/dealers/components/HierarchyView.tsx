@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { Dealer, SubDealer } from "../../../services/dealerService";
+import { Dealer, SubDealer } from "../../../services/dealer";
 
 interface HierarchyViewProps {
   dealers: Dealer[];

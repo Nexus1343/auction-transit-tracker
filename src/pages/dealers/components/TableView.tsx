@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Edit2, Trash2, Copy } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { Dealer } from "../../../services/dealerService";
+import { Dealer } from "../../../services/dealer";
 
 interface TableViewProps {
   dealers: Dealer[];
@@ -41,7 +40,7 @@ const TableView = ({ dealers, searchTerm, onEditDealer, onDeleteDealer }: TableV
       return [...acc, ...mappedSubDealers];
     }
     return acc;
-  }, [] as (Dealer & { parentDealerName?: string, parentDealerId?: number })[]);
+  }, [] as Dealer[]);
 
   // Combine dealers and sub-dealers for display
   const filteredDealers = [...topLevelDealers, ...allSubDealers];
@@ -64,13 +63,13 @@ const TableView = ({ dealers, searchTerm, onEditDealer, onDeleteDealer }: TableV
             <td className="px-4 py-3">
               <div className="font-medium">{dealer.name}</div>
               
-              {dealer.parentDealerName && (
+              {'parentDealerName' in dealer && dealer.parentDealerName && (
                 <div className="text-sm text-gray-500">
                   Sub-dealer of {dealer.parentDealerName}
                 </div>
               )}
               
-              {!dealer.dealer_id && dealer.subDealers?.length > 0 && (
+              {!dealer.dealer_id && dealer.subDealers && dealer.subDealers.length > 0 && (
                 <div className="text-sm text-gray-500">
                   {dealer.subDealers.length} sub-dealers
                 </div>

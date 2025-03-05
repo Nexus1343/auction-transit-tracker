@@ -12,7 +12,7 @@ import {
   deleteDealer,
   fetchTransportPrices,
   fetchContainerPrices
-} from "../../services/dealerService";
+} from "../../services/dealer";
 
 import ViewToggle from './components/ViewToggle';
 import DealerActionsBar from './components/DealerActionsBar';
