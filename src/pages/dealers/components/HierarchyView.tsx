@@ -12,7 +12,12 @@ interface HierarchyViewProps {
 const HierarchyView = ({ dealers, searchTerm, onSelectDealer }: HierarchyViewProps) => {
   const filteredDealers = dealers.filter(dealer => 
     dealer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (dealer.username && dealer.username.toLowerCase().includes(searchTerm.toLowerCase()))
+    (dealer.username && dealer.username.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    // Also include dealers if any of their sub-dealers match search
+    (dealer.subDealers && dealer.subDealers.some(subDealer => 
+      subDealer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (subDealer.username && subDealer.username.toLowerCase().includes(searchTerm.toLowerCase()))
+    ))
   );
 
   const renderHierarchyItem = (dealer: Dealer, level = 0) => {

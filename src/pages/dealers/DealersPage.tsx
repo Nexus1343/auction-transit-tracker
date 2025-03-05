@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, FormEvent } from 'react';
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
@@ -32,7 +31,6 @@ const DealersPage = () => {
   const [containerPrices, setContainerPrices] = useState<any[]>([]);
   const [isSubDealer, setIsSubDealer] = useState(false);
   
-  // Form state
   const [formData, setFormData] = useState<Dealer>({
     name: '',
     username: '',
@@ -52,7 +50,6 @@ const DealersPage = () => {
   }, []);
 
   useEffect(() => {
-    // Reset form when selected dealer changes
     if (selectedDealer) {
       const isSelectedSubDealer = !!selectedDealer.dealer_id;
       setIsSubDealer(isSelectedSubDealer);
@@ -72,7 +69,6 @@ const DealersPage = () => {
         dealer_id: selectedDealer.dealer_id
       });
     } else {
-      // Reset form for new dealer
       setFormData({
         name: '',
         username: '',
@@ -130,7 +126,6 @@ const DealersPage = () => {
     if (name === 'isSubDealer') {
       setIsSubDealer(checked);
       
-      // Reset sub-dealer specific fields when toggling
       if (checked) {
         setFormData(prev => ({
           ...prev,
@@ -155,10 +150,8 @@ const DealersPage = () => {
     
     try {
       if (selectedDealer) {
-        // Update existing dealer
         await updateDealer(formData);
       } else {
-        // Add new dealer or sub-dealer
         if (isSubDealer) {
           const subDealerData: SubDealer = {
             name: formData.name,
@@ -174,7 +167,6 @@ const DealersPage = () => {
         }
       }
       
-      // Reload data after update
       await loadData();
       setIsModalOpen(false);
     } catch (error) {
@@ -203,15 +195,16 @@ const DealersPage = () => {
     setSelectedDealer(null);
     setIsModalOpen(true);
   };
-  
+
   const handleEditDealer = (dealer: Dealer) => {
+    const isSubDealer = !!dealer.dealer_id;
+    setIsSubDealer(isSubDealer);
     setSelectedDealer(dealer);
     setIsModalOpen(true);
   };
 
   return (
     <div className="p-6">
-      {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Dealers</h1>
@@ -223,7 +216,6 @@ const DealersPage = () => {
         />
       </div>
 
-      {/* Controls and Content */}
       <Card>
         <DealerActionsBar
           onAddDealer={handleAddDealer}
@@ -233,7 +225,6 @@ const DealersPage = () => {
           isLoading={isLoading}
         />
 
-        {/* Content */}
         <div className="p-4">
           {isLoading ? (
             <div className="flex justify-center items-center py-10">
@@ -256,7 +247,6 @@ const DealersPage = () => {
         </div>
       </Card>
 
-      {/* Add/Edit Modal */}
       <DealerDialog
         isOpen={isModalOpen}
         onOpenChange={setIsModalOpen}

@@ -131,7 +131,14 @@ export const updateDealer = async (dealer: Dealer): Promise<Dealer | null> => {
       if (error) throw error;
       
       toast.success('Sub-dealer updated successfully');
-      return data;
+      return {
+        ...data,
+        buyer_id: null,
+        buyer_id_2: null,
+        dealer_fee_2: null,
+        transport_price_id: null,
+        container_price_id: null
+      };
     } else {
       // This is a regular dealer
       const { data, error } = await supabase
