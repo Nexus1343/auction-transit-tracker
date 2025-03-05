@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -21,10 +20,10 @@ export interface SubDealer {
   id?: number;
   name: string;
   username: string | null;
+  password: string | null;
+  mobile: string | null;
   dealer_fee: number | null;
   dealer_id?: number | null;
-  mobile?: string | null;
-  password?: string | null;
 }
 
 export const fetchDealers = async (): Promise<Dealer[]> => {
