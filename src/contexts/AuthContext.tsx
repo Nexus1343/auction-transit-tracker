@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Session, User } from '@supabase/supabase-js';
@@ -42,9 +41,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('Fetching user role for user ID:', userId);
       
-      const { data, error } = await supabase
+      const { data: userData, error: userError } = await supabase
         .from('user_profile')
         .select(`
+          auth_id,
           role_id,
           roles (
             id, name, permissions
@@ -53,20 +53,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('auth_id', userId)
         .single();
 
-      if (error) {
-        console.error('Error fetching user role:', error);
+      if (userError) {
+        console.error('Error fetching user role:', userError);
         return;
       }
 
-      console.log('User profile data:', data);
+      console.log('User profile data:', userData);
 
-      if (data && data.roles) {
-        const roleData = data.roles;
+      if (userData && userData.roles) {
+        const roleData = userData.roles;
         const roleName = roleData.name;
         
         console.log('Role data:', roleData);
         console.log('Role name:', roleName);
         console.log('Role permissions (raw):', roleData.permissions);
+        
+        setUserRole(roleName);
+        
+        if (roleName === 'Admin') {
+          console.log('Admin user detected, setting full permissions');
+          const adminPermissions: UserPermissions = {
+            '': { read: true, write: true, delete: true },
+            'vehicles': { read: true, write: true, delete: true },
+            'dealers': { read: true, write: true, delete: true },
+            'pricing': { read: true, write: true, delete: true },
+            'users': { read: true, write: true, delete: true },
+            'profile': { read: true, write: true, delete: true }
+          };
+          setPermissions(adminPermissions);
+          return;
+        }
         
         let rolePermissions: UserPermissions = {};
 
@@ -75,11 +91,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const parsedPermissions = JSON.parse(roleData.permissions);
             console.log('Parsed permissions:', parsedPermissions);
             if (parsedPermissions && typeof parsedPermissions === 'object' && !Array.isArray(parsedPermissions)) {
-              rolePermissions = validatePermissionsObject(parsedPermissions);
+              rolePermissions = processPermissions(parsedPermissions);
             }
           } else if (roleData.permissions && typeof roleData.permissions === 'object' && !Array.isArray(roleData.permissions)) {
             console.log('Object permissions:', roleData.permissions);
-            rolePermissions = validatePermissionsObject(roleData.permissions);
+            rolePermissions = processPermissions(roleData.permissions);
           }
         } catch (e) {
           console.error('Error parsing permissions:', e);
@@ -87,12 +103,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         console.log('Final processed permissions:', rolePermissions);
-        
-        setUserRole(roleName);
         setPermissions(rolePermissions);
       } else {
         console.warn('No roles found for user', userId);
-        // Set default permissions - giving basic access to dashboard
         setUserRole('User');
         setPermissions({
           '': { read: true, write: false, delete: false }
@@ -103,27 +116,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const validatePermissionsObject = (obj: any): UserPermissions => {
-    const validatedPermissions: UserPermissions = {};
+  const processPermissions = (permObj: any): UserPermissions => {
+    const processed: UserPermissions = {};
     
-    Object.keys(obj).forEach(resource => {
-      const resourcePermissions = obj[resource];
+    if ('read' in permObj || 'write' in permObj || 'delete' in permObj) {
+      processed[''] = {
+        read: Boolean(permObj.read),
+        write: Boolean(permObj.write),
+        delete: Boolean(permObj.delete)
+      };
       
-      if (resourcePermissions && typeof resourcePermissions === 'object') {
-        validatedPermissions[resource] = {
-          read: Boolean(resourcePermissions.read),
-          write: Boolean(resourcePermissions.write),
-          delete: resourcePermissions.delete !== undefined ? Boolean(resourcePermissions.delete) : undefined
+      const resources = ['vehicles', 'dealers', 'pricing', 'users', 'profile'];
+      resources.forEach(resource => {
+        processed[resource] = {
+          read: Boolean(permObj.read),
+          write: Boolean(permObj.write),
+          delete: Boolean(permObj.delete)
         };
-      }
-    });
-    
-    // Ensure at least dashboard access
-    if (!validatedPermissions['']) {
-      validatedPermissions[''] = { read: true, write: false, delete: false };
+      });
+    } else {
+      processed[''] = { read: true, write: false, delete: false };
+      
+      Object.keys(permObj).forEach(key => {
+        if (typeof permObj[key] === 'object' && !Array.isArray(permObj[key])) {
+          processed[key] = {
+            read: Boolean(permObj[key].read),
+            write: Boolean(permObj[key].write),
+            delete: Boolean(permObj[key].delete)
+          };
+        }
+      });
     }
     
-    return validatedPermissions;
+    if (!processed['']) {
+      processed[''] = { read: true, write: false, delete: false };
+    }
+    
+    return processed;
   };
 
   useEffect(() => {
@@ -225,25 +254,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const hasPermission = (resource: string, action: 'read' | 'write' | 'delete'): boolean => {
-    console.log(`Checking permission for ${resource}:${action}`, { permissions });
+    console.log(`Checking permission for ${resource}:${action}`, { permissions, userRole });
     
-    // If resource is empty (dashboard) and we're checking read permission
     if (resource === '' && action === 'read') {
-      return true; // Always allow dashboard access
+      return true;
     }
     
-    // Special case: Admin role has all permissions
     if (userRole === 'Admin') {
       console.log('User is Admin, granting all permissions');
       return true;
     }
     
-    // Check specific permission
-    if (!permissions || !permissions[resource]) {
+    if (!permissions) {
       return false;
     }
     
-    return !!permissions[resource][action];
+    if (permissions[resource] && permissions[resource][action] === true) {
+      return true;
+    }
+    
+    if (permissions[''] && permissions[''][action] === true) {
+      return true;
+    }
+    
+    return false;
   };
 
   return (
