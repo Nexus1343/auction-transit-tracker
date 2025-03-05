@@ -1,6 +1,8 @@
+
 import React, { useState, useEffect, FormEvent } from 'react';
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { 
   Dealer, 
@@ -21,14 +23,11 @@ import HierarchyView from './components/HierarchyView';
 import DealerDialog from './components/DealerDialog';
 
 const DealersPage = () => {
+  const queryClient = useQueryClient();
   const [activeView, setActiveView] = useState<'table' | 'hierarchy'>('table');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDealer, setSelectedDealer] = useState<Dealer | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [dealers, setDealers] = useState<Dealer[]>([]);
-  const [transportPrices, setTransportPrices] = useState<any[]>([]);
-  const [containerPrices, setContainerPrices] = useState<any[]>([]);
   const [isSubDealer, setIsSubDealer] = useState(false);
   
   const [formData, setFormData] = useState<Dealer>({
@@ -45,9 +44,72 @@ const DealersPage = () => {
     dealer_id: null
   });
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  // Fetch dealers using React Query
+  const { 
+    data: dealers = [], 
+    isLoading: isDealersLoading,
+    refetch: refetchDealers
+  } = useQuery({
+    queryKey: ['dealers'],
+    queryFn: fetchDealers
+  });
+
+  // Fetch transport prices using React Query
+  const { 
+    data: transportPrices = []
+  } = useQuery({
+    queryKey: ['transportPrices'],
+    queryFn: fetchTransportPrices
+  });
+
+  // Fetch container prices using React Query
+  const { 
+    data: containerPrices = []
+  } = useQuery({
+    queryKey: ['containerPrices'],
+    queryFn: fetchContainerPrices
+  });
+
+  // Mutation for adding a dealer
+  const addDealerMutation = useMutation({
+    mutationFn: (dealer: Dealer) => isSubDealer ? addSubDealer(dealer as SubDealer) : addDealer(dealer),
+    onSuccess: () => {
+      toast.success(`${isSubDealer ? 'Sub-dealer' : 'Dealer'} added successfully`);
+      queryClient.invalidateQueries({ queryKey: ['dealers'] });
+      setIsModalOpen(false);
+    },
+    onError: (error: any) => {
+      console.error(`Error adding ${isSubDealer ? 'sub-dealer' : 'dealer'}:`, error);
+      toast.error(`Failed to add ${isSubDealer ? 'sub-dealer' : 'dealer'}`);
+    }
+  });
+
+  // Mutation for updating a dealer
+  const updateDealerMutation = useMutation({
+    mutationFn: updateDealer,
+    onSuccess: () => {
+      toast.success('Dealer updated successfully');
+      queryClient.invalidateQueries({ queryKey: ['dealers'] });
+      setIsModalOpen(false);
+    },
+    onError: (error: any) => {
+      console.error('Error updating dealer:', error);
+      toast.error('Failed to update dealer');
+    }
+  });
+
+  // Mutation for deleting a dealer
+  const deleteDealerMutation = useMutation({
+    mutationFn: deleteDealer,
+    onSuccess: () => {
+      toast.success('Dealer deleted successfully');
+      queryClient.invalidateQueries({ queryKey: ['dealers'] });
+    },
+    onError: (error: any) => {
+      console.error('Error deleting dealer:', error);
+      toast.error('Failed to delete dealer');
+    }
+  });
 
   useEffect(() => {
     if (selectedDealer) {
@@ -85,26 +147,6 @@ const DealersPage = () => {
       setIsSubDealer(false);
     }
   }, [selectedDealer]);
-
-  const loadData = async () => {
-    setIsLoading(true);
-    try {
-      const [dealersData, transportData, containerData] = await Promise.all([
-        fetchDealers(),
-        fetchTransportPrices(),
-        fetchContainerPrices()
-      ]);
-      
-      setDealers(dealersData);
-      setTransportPrices(transportData);
-      setContainerPrices(containerData);
-    } catch (error) {
-      console.error('Error loading data:', error);
-      toast.error('Failed to load data');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
@@ -146,48 +188,28 @@ const DealersPage = () => {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     
-    try {
-      if (selectedDealer) {
-        await updateDealer(formData);
-      } else {
-        if (isSubDealer) {
-          const subDealerData: SubDealer = {
-            name: formData.name,
-            username: formData.username,
-            password: formData.password,
-            mobile: formData.mobile,
-            dealer_fee: formData.dealer_fee,
-            dealer_id: formData.dealer_id
-          };
-          await addSubDealer(subDealerData);
-        } else {
-          await addDealer(formData);
-        }
-      }
+    if (selectedDealer) {
+      updateDealerMutation.mutate(formData);
+    } else {
+      const subDealerData: SubDealer = {
+        name: formData.name,
+        username: formData.username,
+        password: formData.password,
+        mobile: formData.mobile,
+        dealer_fee: formData.dealer_fee,
+        dealer_id: formData.dealer_id
+      };
       
-      await loadData();
-      setIsModalOpen(false);
-    } catch (error) {
-      console.error('Error saving dealer:', error);
-      toast.error('Failed to save dealer');
-    } finally {
-      setIsLoading(false);
+      isSubDealer 
+        ? addDealerMutation.mutate(subDealerData as Dealer) 
+        : addDealerMutation.mutate(formData);
     }
   };
 
-  const handleDeleteDealer = async (id: number) => {
+  const handleDeleteDealer = (id: number) => {
     if (window.confirm('Are you sure you want to delete this dealer?')) {
-      setIsLoading(true);
-      try {
-        await deleteDealer(id);
-        await loadData();
-      } catch (error) {
-        console.error('Error deleting dealer:', error);
-      } finally {
-        setIsLoading(false);
-      }
+      deleteDealerMutation.mutate(id);
     }
   };
 
@@ -202,6 +224,11 @@ const DealersPage = () => {
     setSelectedDealer(dealer);
     setIsModalOpen(true);
   };
+
+  const isLoading = isDealersLoading || 
+    addDealerMutation.isPending || 
+    updateDealerMutation.isPending || 
+    deleteDealerMutation.isPending;
 
   return (
     <div className="p-6">
@@ -221,7 +248,7 @@ const DealersPage = () => {
           onAddDealer={handleAddDealer}
           searchTerm={searchTerm}
           onSearchChange={(e) => setSearchTerm(e.target.value)}
-          onRefresh={loadData}
+          onRefresh={() => refetchDealers()}
           isLoading={isLoading}
         />
 

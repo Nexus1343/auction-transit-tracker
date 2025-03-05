@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Edit2, Trash2, Copy } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -58,56 +59,61 @@ const TableView = ({ dealers, searchTerm, onEditDealer, onDeleteDealer }: TableV
         </tr>
       </thead>
       <tbody>
-        {filteredDealers.map(dealer => (
-          <tr key={`${dealer.dealer_id ? 'sub-' : ''}${dealer.id}`} className="border-b hover:bg-gray-50">
-            <td className="px-4 py-3">
-              <div className="font-medium">{dealer.name}</div>
-              
-              {'parentDealerName' in dealer && dealer.parentDealerName && (
-                <div className="text-sm text-gray-500">
-                  Sub-dealer of {dealer.parentDealerName}
+        {filteredDealers.map(dealer => {
+          // Check if dealer has the property 'subDealers'
+          const hasSubDealers = 'subDealers' in dealer && dealer.subDealers && dealer.subDealers.length > 0;
+          
+          return (
+            <tr key={`${dealer.dealer_id ? 'sub-' : ''}${dealer.id}`} className="border-b hover:bg-gray-50">
+              <td className="px-4 py-3">
+                <div className="font-medium">{dealer.name}</div>
+                
+                {'parentDealerName' in dealer && dealer.parentDealerName && (
+                  <div className="text-sm text-gray-500">
+                    Sub-dealer of {dealer.parentDealerName}
+                  </div>
+                )}
+                
+                {!dealer.dealer_id && hasSubDealers && (
+                  <div className="text-sm text-gray-500">
+                    {dealer.subDealers.length} sub-dealers
+                  </div>
+                )}
+              </td>
+              <td className="px-4 py-3">
+                <div className="flex items-center space-x-2">
+                  <span className="text-gray-600">{dealer.username}</span>
+                  <button className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Copy className="w-4 h-4 text-gray-400 hover:text-gray-600" />
+                  </button>
                 </div>
-              )}
-              
-              {!dealer.dealer_id && dealer.subDealers && dealer.subDealers.length > 0 && (
-                <div className="text-sm text-gray-500">
-                  {dealer.subDealers.length} sub-dealers
+              </td>
+              <td className="px-4 py-3 text-gray-600">{dealer.mobile || '-'}</td>
+              <td className="px-4 py-3 text-gray-600">{dealer.buyer_id || '-'}</td>
+              <td className="px-4 py-3 text-gray-600">
+                ${dealer.dealer_fee ? dealer.dealer_fee.toFixed(2) : '0.00'}
+              </td>
+              <td className="px-4 py-3">
+                <div className="flex items-center justify-end space-x-2">
+                  <Button 
+                    onClick={() => onEditDealer(dealer)}
+                    variant="ghost"
+                    size="icon"
+                  >
+                    <Edit2 className="w-4 h-4 text-gray-400" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => dealer.id && onDeleteDealer(dealer.id)}
+                  >
+                    <Trash2 className="w-4 h-4 text-gray-400" />
+                  </Button>
                 </div>
-              )}
-            </td>
-            <td className="px-4 py-3">
-              <div className="flex items-center space-x-2">
-                <span className="text-gray-600">{dealer.username}</span>
-                <button className="opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Copy className="w-4 h-4 text-gray-400 hover:text-gray-600" />
-                </button>
-              </div>
-            </td>
-            <td className="px-4 py-3 text-gray-600">{dealer.mobile || '-'}</td>
-            <td className="px-4 py-3 text-gray-600">{dealer.buyer_id || '-'}</td>
-            <td className="px-4 py-3 text-gray-600">
-              ${dealer.dealer_fee ? dealer.dealer_fee.toFixed(2) : '0.00'}
-            </td>
-            <td className="px-4 py-3">
-              <div className="flex items-center justify-end space-x-2">
-                <Button 
-                  onClick={() => onEditDealer(dealer)}
-                  variant="ghost"
-                  size="icon"
-                >
-                  <Edit2 className="w-4 h-4 text-gray-400" />
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={() => dealer.id && onDeleteDealer(dealer.id)}
-                >
-                  <Trash2 className="w-4 h-4 text-gray-400" />
-                </Button>
-              </div>
-            </td>
-          </tr>
-        ))}
+              </td>
+            </tr>
+          );
+        })}
       </tbody>
     </table>
   );
