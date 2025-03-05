@@ -1,7 +1,16 @@
 
 import React, { useState, useEffect } from 'react';
-import { fetchTransportPrices, fetchContainerPrices } from '@/services/dealer/priceService';
-import { toast } from '@/components/ui/use-toast';
+import { 
+  fetchTransportPrices, 
+  fetchContainerPrices,
+  addTransportPrice,
+  updateTransportPrice,
+  deleteTransportPrice,
+  addContainerPrice,
+  updateContainerPrice,
+  deleteContainerPrice
+} from '@/services/dealer/priceService';
+import { toast } from 'sonner';
 import PricingTabs from './components/PricingTabs';
 import TransportPricesTable from './components/TransportPricesTable';
 import ContainerPricesTable from './components/ContainerPricesTable';
@@ -36,15 +45,29 @@ const PricingPage: React.FC = () => {
           fetchContainerPrices()
         ]);
         
-        setTransportPrices(transportData as TransportPrice[]);
-        setContainerPrices(containerData as ContainerPrice[]);
+        // Map the data to match our types
+        const mappedTransportData = transportData.map((item: any): TransportPrice => ({
+          id: item.id,
+          city: item.city || '',
+          city2: item.city2 || null,
+          zip: item.zip || '',
+          state: item.state || '',
+          port: item.port || '',
+          price: item.price || 0
+        }));
+        
+        const mappedContainerData = containerData.map((item: any): ContainerPrice => ({
+          id: item.id,
+          port: item.port || '',
+          vehicleType: item.vehicle_type || '',
+          price: item.price || 0
+        }));
+        
+        setTransportPrices(mappedTransportData);
+        setContainerPrices(mappedContainerData);
       } catch (error) {
         console.error('Error loading price data:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load pricing data',
-          variant: 'destructive',
-        });
+        toast.error('Failed to load pricing data');
       } finally {
         setIsLoading(false);
       }
@@ -70,7 +93,7 @@ const PricingPage: React.FC = () => {
   });
 
   // Handler for adding/updating a transport price
-  const handleSaveTransportPrice = (formData: Omit<TransportPrice, 'id'>) => {
+  const handleSaveTransportPrice = async (formData: Omit<TransportPrice, 'id'>) => {
     const priceData = {
       ...formData,
       price: parseFloat(formData.price.toString())
@@ -78,23 +101,28 @@ const PricingPage: React.FC = () => {
     
     if (selectedTransportPrice) {
       // Update existing price
-      setTransportPrices(transportPrices.map(price => 
-        price.id === selectedTransportPrice.id 
-          ? { ...price, ...priceData } 
-          : price
-      ));
-      toast({
-        title: "Success",
-        description: "Transportation price updated successfully",
-      });
+      const updatedPrice = await updateTransportPrice(selectedTransportPrice.id, priceData);
+      if (updatedPrice) {
+        setTransportPrices(transportPrices.map(price => 
+          price.id === selectedTransportPrice.id 
+            ? { ...price, ...priceData } 
+            : price
+        ));
+      }
     } else {
       // Add new price
-      const nextId = Math.max(...transportPrices.map(p => p.id || 0), 0) + 1;
-      setTransportPrices([...transportPrices, { id: nextId, ...priceData }]);
-      toast({
-        title: "Success",
-        description: "New transportation price added successfully",
-      });
+      const newPrice = await addTransportPrice(priceData);
+      if (newPrice) {
+        setTransportPrices([...transportPrices, {
+          id: newPrice.id,
+          city: newPrice.city || '',
+          city2: newPrice.city2 || null,
+          zip: newPrice.zip || '',
+          state: newPrice.state || '',
+          port: newPrice.port || '',
+          price: newPrice.price || 0
+        }]);
+      }
     }
     
     setTransportModalOpen(false);
@@ -102,7 +130,7 @@ const PricingPage: React.FC = () => {
   };
 
   // Handler for adding/updating a container price
-  const handleSaveContainerPrice = (formData: Omit<ContainerPrice, 'id'>) => {
+  const handleSaveContainerPrice = async (formData: Omit<ContainerPrice, 'id'>) => {
     const priceData = {
       ...formData,
       price: parseFloat(formData.price.toString())
@@ -110,23 +138,30 @@ const PricingPage: React.FC = () => {
     
     if (selectedContainerPrice) {
       // Update existing price
-      setContainerPrices(containerPrices.map(price => 
-        price.id === selectedContainerPrice.id 
-          ? { ...price, ...priceData } 
-          : price
-      ));
-      toast({
-        title: "Success",
-        description: "Container price updated successfully",
-      });
+      const updatedPrice = await updateContainerPrice(selectedContainerPrice.id, priceData);
+      if (updatedPrice) {
+        setContainerPrices(containerPrices.map(price => 
+          price.id === selectedContainerPrice.id 
+            ? { 
+                id: price.id,
+                port: updatedPrice.port || '',
+                vehicleType: updatedPrice.vehicle_type || '',
+                price: updatedPrice.price || 0
+              } 
+            : price
+        ));
+      }
     } else {
       // Add new price
-      const nextId = Math.max(...containerPrices.map(p => p.id || 0), 0) + 1;
-      setContainerPrices([...containerPrices, { id: nextId, ...priceData }]);
-      toast({
-        title: "Success",
-        description: "New container price added successfully",
-      });
+      const newPrice = await addContainerPrice(priceData);
+      if (newPrice) {
+        setContainerPrices([...containerPrices, {
+          id: newPrice.id,
+          port: newPrice.port || '',
+          vehicleType: newPrice.vehicle_type || '',
+          price: newPrice.price || 0
+        }]);
+      }
     }
     
     setContainerModalOpen(false);
@@ -134,21 +169,19 @@ const PricingPage: React.FC = () => {
   };
 
   // Handler for deleting a transport price
-  const handleDeleteTransportPrice = (id: number) => {
-    setTransportPrices(transportPrices.filter(price => price.id !== id));
-    toast({
-      title: "Success",
-      description: "Transportation price deleted successfully",
-    });
+  const handleDeleteTransportPrice = async (id: number) => {
+    const success = await deleteTransportPrice(id);
+    if (success) {
+      setTransportPrices(transportPrices.filter(price => price.id !== id));
+    }
   };
 
   // Handler for deleting a container price
-  const handleDeleteContainerPrice = (id: number) => {
-    setContainerPrices(containerPrices.filter(price => price.id !== id));
-    toast({
-      title: "Success",
-      description: "Container price deleted successfully",
-    });
+  const handleDeleteContainerPrice = async (id: number) => {
+    const success = await deleteContainerPrice(id);
+    if (success) {
+      setContainerPrices(containerPrices.filter(price => price.id !== id));
+    }
   };
 
   return (

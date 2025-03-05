@@ -600,6 +600,7 @@ export type Database = {
       transport_prices: {
         Row: {
           city: string | null
+          city2: string | null
           created_at: string | null
           id: number
           port: string | null
@@ -610,6 +611,7 @@ export type Database = {
         }
         Insert: {
           city?: string | null
+          city2?: string | null
           created_at?: string | null
           id?: number
           port?: string | null
@@ -620,6 +622,7 @@ export type Database = {
         }
         Update: {
           city?: string | null
+          city2?: string | null
           created_at?: string | null
           id?: number
           port?: string | null
