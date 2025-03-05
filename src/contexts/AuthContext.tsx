@@ -1,71 +1,117 @@
 
-import React, { createContext, useContext, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Session, User } from '@supabase/supabase-js';
-import { useAuthState } from '@/hooks/useAuthState';
-import { useAuthActions } from '@/hooks/useAuthActions';
-import { UserPermissions, checkPermission } from '@/utils/auth/permissionUtils';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 
 type AuthContextType = {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
-  userRole: string | null;
-  permissions: UserPermissions;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, name: string) => Promise<void>;
   signOut: () => Promise<void>;
-  hasPermission: (resource: string, action: 'read' | 'write' | 'delete') => boolean;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, session, isLoading, userRole, permissions } = useAuthState();
-  const { isLoading: authActionLoading, signIn, signUp, signOut } = useAuthActions();
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Log auth state for debugging
-    console.log('Auth Provider State:', { 
-      isAuthenticated: !!user, 
-      isLoading, 
-      authActionLoading,
-      userRole,
-      permissionsCount: Object.keys(permissions).length
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user || null);
+      setIsLoading(false);
     });
-    
-    // Add timeout to detect potential infinite loading
-    const timeoutId = setTimeout(() => {
-      if (isLoading) {
-        console.warn('Auth loading state has been active for too long, might be stuck in AuthProvider');
-        toast({
-          title: "Authentication Issue",
-          description: "There might be an issue with authentication. Try refreshing the page.",
-          variant: "destructive"
-        });
-      }
-    }, 15000); // 15 seconds timeout
-    
-    return () => clearTimeout(timeoutId);
-  }, [user, isLoading, authActionLoading, userRole, permissions, toast]);
 
-  const hasPermission = (resource: string, action: 'read' | 'write' | 'delete'): boolean => {
-    return checkPermission(permissions, resource, action, userRole);
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setSession(session);
+        setUser(session?.user || null);
+        setIsLoading(false);
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const signIn = async (email: string, password: string) => {
+    try {
+      setIsLoading(true);
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      
+      if (error) {
+        throw error;
+      }
+
+      navigate('/');
+    } catch (error: any) {
+      toast({
+        title: "Authentication failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const signUp = async (email: string, password: string, name: string) => {
+    try {
+      setIsLoading(true);
+      const { error } = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: {
+          data: {
+            name
+          }
+        }
+      });
+      
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Success!",
+        description: "Please check your email to confirm your account.",
+      });
+      
+    } catch (error: any) {
+      toast({
+        title: "Registration failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const signOut = async () => {
+    try {
+      await supabase.auth.signOut();
+      navigate('/login');
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to sign out",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      session, 
-      isLoading: isLoading || authActionLoading, 
-      userRole,
-      permissions,
-      signIn, 
-      signUp, 
-      signOut,
-      hasPermission
-    }}>
+    <AuthContext.Provider value={{ user, session, isLoading, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );

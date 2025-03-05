@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, FormEvent } from 'react';
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -10,8 +10,8 @@ import {
   fetchDealers, 
   addDealer,
   addSubDealer,
-  updateDealer as updateDealerAPI, 
-  deleteDealer as deleteDealerAPI,
+  updateDealer, 
+  deleteDealer,
   fetchTransportPrices,
   fetchContainerPrices
 } from "../../services/dealer";
@@ -22,22 +22,21 @@ import TableView from './components/TableView';
 import HierarchyView from './components/HierarchyView';
 import DealerDialog from './components/DealerDialog';
 
-const DealersPage: React.FC = () => {
+const DealersPage = () => {
   const queryClient = useQueryClient();
   const [activeView, setActiveView] = useState<'table' | 'hierarchy'>('table');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDealer, setSelectedDealer] = useState<Dealer | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isSubDealer, setIsSubDealer] = useState(false);
-  const [formMode, setFormMode] = useState<'create' | 'edit' | 'add-subdealer'>('create');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const [formData, setFormData] = useState<Dealer>({
     name: '',
-    email: null,
-    password: null,
-    mobile: null,
-    buyer_id: null,
-    buyer_id_2: null,
+    username: '',
+    password: '',
+    mobile: '',
+    buyer_id: '',
+    buyer_id_2: '',
     dealer_fee: 0,
     dealer_fee_2: 0,
     transport_price_id: null,
@@ -45,6 +44,7 @@ const DealersPage: React.FC = () => {
     dealer_id: null
   });
 
+  // Fetch dealers using React Query
   const { 
     data: dealers = [], 
     isLoading: isDealersLoading,
@@ -54,6 +54,7 @@ const DealersPage: React.FC = () => {
     queryFn: fetchDealers
   });
 
+  // Fetch transport prices using React Query
   const { 
     data: transportPrices = []
   } = useQuery({
@@ -61,6 +62,7 @@ const DealersPage: React.FC = () => {
     queryFn: fetchTransportPrices
   });
 
+  // Fetch container prices using React Query
   const { 
     data: containerPrices = []
   } = useQuery({
@@ -68,6 +70,7 @@ const DealersPage: React.FC = () => {
     queryFn: fetchContainerPrices
   });
 
+  // Mutation for adding a dealer
   const addDealerMutation = useMutation({
     mutationFn: (dealer: Dealer) => isSubDealer ? addSubDealer(dealer as SubDealer) : addDealer(dealer),
     onSuccess: () => {
@@ -81,11 +84,9 @@ const DealersPage: React.FC = () => {
     }
   });
 
+  // Mutation for updating a dealer
   const updateDealerMutation = useMutation({
-    mutationFn: (dealer: Dealer) => {
-      if (!dealer.id) throw new Error("Dealer ID is required for update");
-      return updateDealerAPI(dealer.id, dealer);
-    },
+    mutationFn: updateDealer,
     onSuccess: () => {
       toast.success('Dealer updated successfully');
       queryClient.invalidateQueries({ queryKey: ['dealers'] });
@@ -97,8 +98,9 @@ const DealersPage: React.FC = () => {
     }
   });
 
+  // Mutation for deleting a dealer
   const deleteDealerMutation = useMutation({
-    mutationFn: (id: number) => deleteDealerAPI(id),
+    mutationFn: deleteDealer,
     onSuccess: () => {
       toast.success('Dealer deleted successfully');
       queryClient.invalidateQueries({ queryKey: ['dealers'] });
@@ -117,13 +119,13 @@ const DealersPage: React.FC = () => {
       setFormData({
         id: selectedDealer.id,
         name: selectedDealer.name,
-        email: selectedDealer.email,
-        password: selectedDealer.password,
-        mobile: selectedDealer.mobile,
-        buyer_id: selectedDealer.buyer_id,
-        buyer_id_2: selectedDealer.buyer_id_2,
-        dealer_fee: selectedDealer.dealer_fee,
-        dealer_fee_2: selectedDealer.dealer_fee_2,
+        username: selectedDealer.username || '',
+        password: selectedDealer.password || '',
+        mobile: selectedDealer.mobile || '',
+        buyer_id: selectedDealer.buyer_id || '',
+        buyer_id_2: selectedDealer.buyer_id_2 || '',
+        dealer_fee: selectedDealer.dealer_fee || 0,
+        dealer_fee_2: selectedDealer.dealer_fee_2 || 0,
         transport_price_id: selectedDealer.transport_price_id,
         container_price_id: selectedDealer.container_price_id,
         dealer_id: selectedDealer.dealer_id
@@ -131,11 +133,11 @@ const DealersPage: React.FC = () => {
     } else {
       setFormData({
         name: '',
-        email: null,
-        password: null,
-        mobile: null,
-        buyer_id: null,
-        buyer_id_2: null,
+        username: '',
+        password: '',
+        mobile: '',
+        buyer_id: '',
+        buyer_id_2: '',
         dealer_fee: 0,
         dealer_fee_2: 0,
         transport_price_id: null,
@@ -184,20 +186,35 @@ const DealersPage: React.FC = () => {
     }
   };
 
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    
+    if (selectedDealer) {
+      updateDealerMutation.mutate(formData);
+    } else {
+      const subDealerData: SubDealer = {
+        name: formData.name,
+        username: formData.username,
+        password: formData.password,
+        mobile: formData.mobile,
+        dealer_fee: formData.dealer_fee,
+        dealer_id: formData.dealer_id
+      };
+      
+      isSubDealer 
+        ? addDealerMutation.mutate(subDealerData as Dealer) 
+        : addDealerMutation.mutate(formData);
+    }
+  };
+
+  const handleDeleteDealer = (id: number) => {
+    if (window.confirm('Are you sure you want to delete this dealer?')) {
+      deleteDealerMutation.mutate(id);
+    }
+  };
+
   const handleAddDealer = () => {
-    setFormMode('create');
-    setSelectedDealer({
-      name: '',
-      email: null,
-      password: null,
-      mobile: null,
-      buyer_id: null,
-      buyer_id_2: null,
-      dealer_fee: 0,
-      dealer_fee_2: 0,
-      transport_price_id: null,
-      container_price_id: null
-    });
+    setSelectedDealer(null);
     setIsModalOpen(true);
   };
 
@@ -205,33 +222,7 @@ const DealersPage: React.FC = () => {
     const isSubDealer = !!dealer.dealer_id;
     setIsSubDealer(isSubDealer);
     setSelectedDealer(dealer);
-    setFormMode('edit');
     setIsModalOpen(true);
-  };
-
-  const handleDealerFormSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      setIsSubmitting(true);
-      
-      if (formMode === 'create') {
-        addDealerMutation.mutate(formData);
-      } else if (formMode === 'edit' && formData.id) {
-        updateDealerMutation.mutate(formData);
-      }
-      
-    } catch (error) {
-      console.error('Error submitting dealer form:', error);
-      toast.error('Failed to submit dealer form');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleDeleteDealer = (dealer: Dealer) => {
-    if (dealer.id && window.confirm('Are you sure you want to delete this dealer?')) {
-      deleteDealerMutation.mutate(dealer.id);
-    }
   };
 
   const isLoading = isDealersLoading || 
@@ -291,7 +282,7 @@ const DealersPage: React.FC = () => {
         onInputChange={handleInputChange}
         onSelectChange={handleSelectChange}
         onSwitchChange={handleSwitchChange}
-        onSubmit={handleDealerFormSubmit}
+        onSubmit={handleSubmit}
         isLoading={isLoading}
         transportPrices={transportPrices}
         containerPrices={containerPrices}
