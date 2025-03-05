@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, FormEvent } from 'react';
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
@@ -112,7 +111,7 @@ const DealersPage = () => {
   const handleSelectChange = (name: string, value: string) => {
     setFormData(prev => ({
       ...prev,
-      [name]: value === '' ? null : parseInt(value)
+      [name]: value === 'none' ? null : parseInt(value)
     }));
   };
 

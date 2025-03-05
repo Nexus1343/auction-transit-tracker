@@ -130,15 +130,15 @@ const DealerForm = ({
               Transportation Price
             </label>
             <Select 
-              value={formData.transport_price_id?.toString() || ""}
-              onValueChange={(value) => onSelectChange('transport_price_id', value)}
+              value={formData.transport_price_id?.toString() || "none"}
+              onValueChange={(value) => onSelectChange('transport_price_id', value === "none" ? "" : value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select transportation price" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">None</SelectItem>
-                {transportPrices.map(price => (
+                <SelectItem value="none">None</SelectItem>
+                {transportPrices && transportPrices.map(price => (
                   <SelectItem key={price.id} value={price.id.toString()}>
                     {price.port || price.city || 'Unnamed'} - ${price.price || 0}
                   </SelectItem>
@@ -151,15 +151,15 @@ const DealerForm = ({
               Container Price
             </label>
             <Select 
-              value={formData.container_price_id?.toString() || ""}
-              onValueChange={(value) => onSelectChange('container_price_id', value)}
+              value={formData.container_price_id?.toString() || "none"}
+              onValueChange={(value) => onSelectChange('container_price_id', value === "none" ? "" : value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select container price" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">None</SelectItem>
-                {containerPrices.map(price => (
+                <SelectItem value="none">None</SelectItem>
+                {containerPrices && containerPrices.map(price => (
                   <SelectItem key={price.id} value={price.id.toString()}>
                     {price.port || price.vehicle_type || 'Unnamed'} - ${price.price || 0}
                   </SelectItem>
