@@ -31,9 +31,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isAuthenticated: !!user, 
       isLoading, 
       authActionLoading,
-      userRole
+      userRole,
+      permissionsCount: Object.keys(permissions).length
     });
-  }, [user, isLoading, authActionLoading, userRole]);
+    
+    // Add timeout to detect potential infinite loading
+    const timeoutId = setTimeout(() => {
+      if (isLoading) {
+        console.warn('Auth loading state has been active for too long, might be stuck in AuthProvider');
+        toast({
+          title: "Authentication Issue",
+          description: "There might be an issue with authentication. Try refreshing the page.",
+          variant: "destructive"
+        });
+      }
+    }, 15000); // 15 seconds timeout
+    
+    return () => clearTimeout(timeoutId);
+  }, [user, isLoading, authActionLoading, userRole, permissions, toast]);
 
   const hasPermission = (resource: string, action: 'read' | 'write' | 'delete'): boolean => {
     return checkPermission(permissions, resource, action, userRole);

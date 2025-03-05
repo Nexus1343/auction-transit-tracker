@@ -51,30 +51,28 @@ export const useAuthState = () => {
         if (roleName === 'Admin') {
           console.log('Admin user detected, setting full permissions');
           setPermissions(createAdminPermissions());
-          setIsLoading(false);
-          return;
-        }
-        
-        let rolePermissions: UserPermissions = {};
+        } else {
+          let rolePermissions: UserPermissions = {};
 
-        try {
-          if (typeof roleData.permissions === 'string') {
-            const parsedPermissions = JSON.parse(roleData.permissions);
-            console.log('Parsed permissions:', parsedPermissions);
-            if (parsedPermissions && typeof parsedPermissions === 'object' && !Array.isArray(parsedPermissions)) {
-              rolePermissions = processPermissions(parsedPermissions);
+          try {
+            if (typeof roleData.permissions === 'string') {
+              const parsedPermissions = JSON.parse(roleData.permissions);
+              console.log('Parsed permissions:', parsedPermissions);
+              if (parsedPermissions && typeof parsedPermissions === 'object' && !Array.isArray(parsedPermissions)) {
+                rolePermissions = processPermissions(parsedPermissions);
+              }
+            } else if (roleData.permissions && typeof roleData.permissions === 'object' && !Array.isArray(roleData.permissions)) {
+              console.log('Object permissions:', roleData.permissions);
+              rolePermissions = processPermissions(roleData.permissions);
             }
-          } else if (roleData.permissions && typeof roleData.permissions === 'object' && !Array.isArray(roleData.permissions)) {
-            console.log('Object permissions:', roleData.permissions);
-            rolePermissions = processPermissions(roleData.permissions);
+          } catch (e) {
+            console.error('Error parsing permissions:', e);
+            rolePermissions = {};
           }
-        } catch (e) {
-          console.error('Error parsing permissions:', e);
-          rolePermissions = {};
-        }
 
-        console.log('Final processed permissions:', rolePermissions);
-        setPermissions(rolePermissions);
+          console.log('Final processed permissions:', rolePermissions);
+          setPermissions(rolePermissions);
+        }
       } else {
         // Set default values even if no role information is available
         console.warn('No roles found for user', userId);
@@ -83,9 +81,6 @@ export const useAuthState = () => {
           '': { read: true, write: false, delete: false }
         });
       }
-      
-      // Important: Always set loading to false here, regardless of role fetch result
-      setIsLoading(false);
     } catch (error) {
       console.error('Error in fetchUserRole:', error);
       // Default values on error and stop loading
@@ -93,6 +88,8 @@ export const useAuthState = () => {
       setPermissions({
         '': { read: true, write: false, delete: false }
       });
+    } finally {
+      // Critical: Always set isLoading to false here to prevent infinite loading
       setIsLoading(false);
     }
   };
@@ -101,6 +98,8 @@ export const useAuthState = () => {
     const setupAuth = async () => {
       try {
         console.log('Setting up auth...');
+        setIsLoading(true);
+        
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
