@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   User, 
   Mail, 
@@ -10,25 +10,28 @@ import {
   X
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
 
 const ProfilePage = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   
   // State for profile data
   const [profileData, setProfileData] = useState({
-    id: 133,
-    name: 'Mirian Kazaishvili',
-    email: user?.email || 'mkazaishvili@americars.ge',
-    username: 'mkazaishvili',
+    id: 0,
+    name: '',
+    email: '',
+    username: '',
     password: '********',
-    mobile: '+995 577 123 456',
-    buyer_id: 'Atlantic',
-    buyer_id_2: 'Atlantic',
-    dealer_fee: 290.00,
-    dealer_fee_2: 270.00,
-    transport_price_id: 1,
-    container_price_id: 1,
-    user_id: 5,
+    mobile: '',
+    buyer_id: '',
+    buyer_id_2: '',
+    dealer_fee: 0,
+    dealer_fee_2: 0,
+    transport_price_id: 0,
+    container_price_id: 0,
+    user_id: 0,
     profile_image: null
   });
 
@@ -44,31 +47,214 @@ const ProfilePage = () => {
   });
   
   // State for pricing plans (from the pricing tables)
-  const transportPricePlans = [
-    { id: 1, name: 'Standard Transportation Pricing' },
-    { id: 2, name: 'Premium Transportation Pricing' },
-    { id: 3, name: 'Economy Transportation Pricing' }
-  ];
+  const [transportPricePlans, setTransportPricePlans] = useState([]);
+  const [containerPricePlans, setContainerPricePlans] = useState([]);
   
-  const containerPricePlans = [
-    { id: 1, name: 'Standard Container Pricing' },
-    { id: 2, name: 'Premium Container Pricing' },
-    { id: 3, name: 'Economy Container Pricing' }
-  ];
+  // State for loading
+  const [isLoading, setIsLoading] = useState(true);
   
-  // Sample activity history
-  const activityHistory = [
-    { date: '2025-03-04 14:30', action: 'Updated dealer fee' },
-    { date: '2025-03-01 10:15', action: 'Changed transport pricing plan' },
-    { date: '2025-02-28 09:45', action: 'Updated contact information' }
-  ];
+  // Fetch profile data
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      if (!user) return;
+      
+      try {
+        // Fetch user profile from user_profile table
+        const { data: userProfile, error: userProfileError } = await supabase
+          .from('user_profile')
+          .select('*')
+          .eq('email', user.email)
+          .maybeSingle();
+          
+        if (userProfileError) throw userProfileError;
+        
+        if (userProfile) {
+          // Fetch dealer info if exists
+          const { data: dealerData, error: dealerError } = await supabase
+            .from('dealers')
+            .select('*')
+            .eq('user_id', userProfile.id)
+            .maybeSingle();
+            
+          if (dealerError) throw dealerError;
+          
+          setProfileData({
+            id: dealerData?.id || 0,
+            name: userProfile.name || '',
+            email: userProfile.email || '',
+            username: dealerData?.username || '',
+            password: '********',
+            mobile: userProfile.mobile || dealerData?.mobile || '',
+            buyer_id: dealerData?.buyer_id || '',
+            buyer_id_2: dealerData?.buyer_id_2 || '',
+            dealer_fee: dealerData?.dealer_fee || 0,
+            dealer_fee_2: dealerData?.dealer_fee_2 || 0,
+            transport_price_id: dealerData?.transport_price_id || 0,
+            container_price_id: dealerData?.container_price_id || 0,
+            user_id: userProfile.id || 0,
+            profile_image: null
+          });
+        }
+        
+        // Fetch transport price plans
+        const { data: transportPrices, error: transportError } = await supabase
+          .from('transport_prices')
+          .select('id, city, state');
+          
+        if (transportError) throw transportError;
+        
+        setTransportPricePlans(transportPrices?.map(tp => ({
+          id: tp.id,
+          name: `${tp.city || ''}, ${tp.state || ''} Transportation`
+        })) || []);
+        
+        // Fetch container price plans
+        const { data: containerPrices, error: containerError } = await supabase
+          .from('container_prices')
+          .select('id, port, vehicle_type');
+          
+        if (containerError) throw containerError;
+        
+        setContainerPricePlans(containerPrices?.map(cp => ({
+          id: cp.id,
+          name: `${cp.port || ''} - ${cp.vehicle_type || ''} Container`
+        })) || []);
+        
+      } catch (error) {
+        console.error('Error fetching profile data:', error);
+        toast({
+          title: "Error loading profile",
+          description: "Failed to load your profile information",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchProfileData();
+  }, [user, toast]);
 
   // Handle profile update
-  const handleProfileUpdate = (e: React.FormEvent) => {
+  const handleProfileUpdate = async (e) => {
     e.preventDefault();
-    setIsEditing(false);
-    // Here you would implement the actual update logic
+    
+    try {
+      // Update user_profile
+      const { error: userProfileError } = await supabase
+        .from('user_profile')
+        .update({
+          name: profileData.name,
+          mobile: profileData.mobile
+        })
+        .eq('id', profileData.user_id);
+        
+      if (userProfileError) throw userProfileError;
+      
+      // Update dealer if exists
+      if (profileData.id) {
+        const { error: dealerError } = await supabase
+          .from('dealers')
+          .update({
+            username: profileData.username,
+            mobile: profileData.mobile,
+            buyer_id: profileData.buyer_id,
+            buyer_id_2: profileData.buyer_id_2,
+            dealer_fee: profileData.dealer_fee,
+            dealer_fee_2: profileData.dealer_fee_2,
+            transport_price_id: profileData.transport_price_id,
+            container_price_id: profileData.container_price_id
+          })
+          .eq('id', profileData.id);
+          
+        if (dealerError) throw dealerError;
+      }
+      
+      toast({
+        title: "Profile updated",
+        description: "Your profile information has been updated successfully",
+      });
+      
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast({
+        title: "Update failed",
+        description: "Failed to update your profile information",
+        variant: "destructive"
+      });
+    }
   };
+  
+  // Handle password change
+  const handlePasswordChange = async () => {
+    // Validate password
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast({
+        title: "Passwords don't match",
+        description: "New password and confirmation must match",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (passwordData.newPassword.length < 6) {
+      toast({
+        title: "Password too short",
+        description: "Password must be at least 6 characters long",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: passwordData.newPassword
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Password updated",
+        description: "Your password has been changed successfully",
+      });
+      
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+      
+      setShowPasswordDialog(false);
+    } catch (error) {
+      console.error('Error changing password:', error);
+      toast({
+        title: "Password change failed",
+        description: error.message || "Failed to update your password",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Handle field change
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setProfileData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  if (isLoading) {
+    return (
+      <div className="p-6 max-w-6xl mx-auto bg-gray-50 flex justify-center items-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-6xl mx-auto bg-gray-50">
@@ -122,7 +308,7 @@ const ProfilePage = () => {
             <p className="text-gray-500">{profileData.email}</p>
             <div className="mt-4 flex flex-col items-center space-y-2 w-full">
               <div className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
-                Super Dealer
+                Admin
               </div>
               <div className="text-sm text-gray-500">
                 ID: {profileData.id}
@@ -152,8 +338,10 @@ const ProfilePage = () => {
                   <User className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
                   <input
                     type="text"
+                    name="name"
                     className="pl-10 w-full p-2 border rounded-lg"
-                    defaultValue={profileData.name}
+                    value={profileData.name}
+                    onChange={handleChange}
                     disabled={!isEditing}
                   />
                 </div>
@@ -168,8 +356,8 @@ const ProfilePage = () => {
                   <input
                     type="email"
                     className="pl-10 w-full p-2 border rounded-lg"
-                    defaultValue={profileData.email}
-                    disabled={!isEditing}
+                    value={profileData.email}
+                    disabled={true} // Email should not be editable as it's tied to auth
                   />
                 </div>
               </div>
@@ -180,8 +368,10 @@ const ProfilePage = () => {
                 </label>
                 <input
                   type="text"
+                  name="username"
                   className="w-full p-2 border rounded-lg"
-                  defaultValue={profileData.username}
+                  value={profileData.username}
+                  onChange={handleChange}
                   disabled={!isEditing}
                 />
               </div>
@@ -194,8 +384,10 @@ const ProfilePage = () => {
                   <Phone className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
                   <input
                     type="text"
+                    name="mobile"
                     className="pl-10 w-full p-2 border rounded-lg"
-                    defaultValue={profileData.mobile}
+                    value={profileData.mobile}
+                    onChange={handleChange}
                     disabled={!isEditing}
                   />
                 </div>
@@ -267,7 +459,7 @@ const ProfilePage = () => {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setShowPasswordDialog(false)}
+                    onClick={handlePasswordChange}
                     className="px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-lg hover:bg-blue-600"
                   >
                     Update Password
