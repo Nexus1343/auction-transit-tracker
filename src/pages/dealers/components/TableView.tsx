@@ -1,34 +1,57 @@
 
 import React from 'react';
 import { Edit2, Trash2 } from 'lucide-react';
-import { Dealer } from '@/services/dealer/types';
+import { Dealer, SubDealer } from '@/services/dealer/types';
 
 interface TableViewProps {
   dealers: Dealer[];
+  searchTerm?: string;
   onEditDealer: (dealer: Dealer) => void;
   onDeleteDealer: (dealer: Dealer) => void;
 }
 
-const TableView: React.FC<TableViewProps> = ({ dealers, onEditDealer, onDeleteDealer }) => {
-  const allDealers = dealers.flatMap(dealer => {
-    const mainDealer = {
+interface DealerDisplayRow extends Dealer {
+  isSubDealer: boolean;
+  parentDealerName: string;
+}
+
+const TableView: React.FC<TableViewProps> = ({ 
+  dealers, 
+  searchTerm = '', 
+  onEditDealer, 
+  onDeleteDealer 
+}) => {
+  const allDealers: DealerDisplayRow[] = dealers.flatMap(dealer => {
+    const mainDealer: DealerDisplayRow = {
       ...dealer,
       isSubDealer: false,
       parentDealerName: dealer.parentDealerName || '-'
     };
     
     const subDealers = dealer.subDealers?.map(sub => ({
-      id: sub.id,
-      name: sub.name,
-      email: sub.email,
-      mobile: sub.mobile,
-      dealer_fee: sub.dealer_fee,
-      dealer_id: dealer.id,
+      ...sub,
       isSubDealer: true,
-      parentDealerName: dealer.name
-    })) || [];
+      parentDealerName: dealer.name,
+      buyer_id: null,
+      buyer_id_2: null,
+      dealer_fee_2: null,
+      transport_price_id: null,
+      container_price_id: null
+    } as DealerDisplayRow)) || [];
     
     return [mainDealer, ...subDealers];
+  });
+
+  const filteredDealers = allDealers.filter(dealer => {
+    if (!searchTerm) return true;
+    
+    const searchValue = searchTerm.toLowerCase();
+    return (
+      (dealer.name && dealer.name.toLowerCase().includes(searchValue)) ||
+      (dealer.email && dealer.email.toLowerCase().includes(searchValue)) ||
+      (dealer.mobile && dealer.mobile.toLowerCase().includes(searchValue)) ||
+      (dealer.parentDealerName && dealer.parentDealerName.toLowerCase().includes(searchValue))
+    );
   });
   
   return (
@@ -61,7 +84,7 @@ const TableView: React.FC<TableViewProps> = ({ dealers, onEditDealer, onDeleteDe
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {allDealers.map((dealer) => (
+            {filteredDealers.map((dealer) => (
               <tr key={`${dealer.isSubDealer ? 'sub-' : ''}${dealer.id}`} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm font-medium text-gray-900">{dealer.name}</div>

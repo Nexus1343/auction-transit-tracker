@@ -1,4 +1,5 @@
-import React, { useState, useEffect, FormEvent } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -9,8 +10,8 @@ import {
   fetchDealers, 
   addDealer,
   addSubDealer,
-  updateDealer, 
-  deleteDealer,
+  updateDealer as updateDealerAPI, 
+  deleteDealer as deleteDealerAPI,
   fetchTransportPrices,
   fetchContainerPrices
 } from "../../services/dealer";
@@ -29,8 +30,7 @@ const DealersPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isSubDealer, setIsSubDealer] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit' | 'add-subdealer'>('create');
-  const [isAddingSubDealer, setIsAddingSubDealer] = useState(false);
-  const [showDealerDialog, setShowDealerDialog] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<Dealer>({
     name: '',
     email: null,
@@ -82,7 +82,10 @@ const DealersPage: React.FC = () => {
   });
 
   const updateDealerMutation = useMutation({
-    mutationFn: updateDealer,
+    mutationFn: (dealer: Dealer) => {
+      if (!dealer.id) throw new Error("Dealer ID is required for update");
+      return updateDealerAPI(dealer.id, dealer);
+    },
     onSuccess: () => {
       toast.success('Dealer updated successfully');
       queryClient.invalidateQueries({ queryKey: ['dealers'] });
@@ -95,7 +98,7 @@ const DealersPage: React.FC = () => {
   });
 
   const deleteDealerMutation = useMutation({
-    mutationFn: deleteDealer,
+    mutationFn: (id: number) => deleteDealerAPI(id),
     onSuccess: () => {
       toast.success('Dealer deleted successfully');
       queryClient.invalidateQueries({ queryKey: ['dealers'] });
@@ -195,122 +198,39 @@ const DealersPage: React.FC = () => {
       transport_price_id: null,
       container_price_id: null
     });
-    setIsAddingSubDealer(false);
-    setShowDealerDialog(true);
+    setIsModalOpen(true);
   };
 
   const handleEditDealer = (dealer: Dealer) => {
     const isSubDealer = !!dealer.dealer_id;
     setIsSubDealer(isSubDealer);
     setSelectedDealer(dealer);
+    setFormMode('edit');
     setIsModalOpen(true);
   };
 
-  const handleDealerFormSubmit = async (data: Dealer) => {
+  const handleDealerFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
       setIsSubmitting(true);
       
       if (formMode === 'create') {
-        let dealerToCreate: Dealer = {
-          name: data.name,
-          email: data.email,
-          password: data.password,
-          mobile: data.mobile,
-          buyer_id: data.buyer_id,
-          buyer_id_2: data.buyer_id_2,
-          dealer_fee: data.dealer_fee,
-          dealer_fee_2: data.dealer_fee_2,
-          transport_price_id: data.transport_price_id,
-          container_price_id: data.container_price_id,
-        };
-        
-        if (data.parentDealerId) {
-          dealerToCreate = {
-            ...dealerToCreate,
-            dealer_id: data.parentDealerId
-          };
-        }
-        
-        if (data.subDealers && data.subDealers.length > 0) {
-          dealerToCreate.subDealers = data.subDealers.map(sub => ({
-            name: sub.name,
-            email: sub.email,
-            password: sub.password,
-            mobile: sub.mobile,
-            dealer_fee: sub.dealer_fee
-          }));
-        }
-        
-        const newDealer = await createDealer(dealerToCreate);
-        
-        if (newDealer) {
-          toast({
-            title: "Dealer created",
-            description: `${newDealer.name} has been created successfully.`,
-          });
-          
-          const updatedDealers = await getAllDealers();
-          setDealers(updatedDealers);
-        }
-      } else if (formMode === 'edit') {
-        const updatedDealer = await updateDealer({
-          id: selectedDealer.id,
-          name: data.name,
-          email: data.email,
-          password: data.password,
-          mobile: data.mobile,
-          buyer_id: data.buyer_id,
-          buyer_id_2: data.buyer_id_2,
-          dealer_fee: data.dealer_fee,
-          dealer_fee_2: data.dealer_fee_2,
-          transport_price_id: data.transport_price_id,
-          container_price_id: data.container_price_id,
-        });
-        
-        if (updatedDealer) {
-          toast({
-            title: "Dealer updated",
-            description: `${updatedDealer.name} has been updated successfully.`,
-          });
-          
-          const updatedDealers = await getAllDealers();
-          setDealers(updatedDealers);
-        }
-      } else if (formMode === 'add-subdealer' && selectedDealer.id) {
-        const updatedDealer = await addSubDealer({
-          name: data.name,
-          email: data.email,
-          password: data.password,
-          mobile: data.mobile,
-          dealer_fee: data.dealer_fee,
-          dealer_id: selectedDealer.id
-        });
-        
-        if (updatedDealer) {
-          toast({
-            title: "Sub-dealer added",
-            description: `${updatedDealer.name} has been added successfully.`,
-          });
-          
-          const updatedDealers = await getAllDealers();
-          setDealers(updatedDealers);
-        }
+        addDealerMutation.mutate(formData);
+      } else if (formMode === 'edit' && formData.id) {
+        updateDealerMutation.mutate(formData);
       }
       
-      setFormMode('create');
-      setSelectedDealer(null);
-      setIsModalOpen(false);
-      setIsAddingSubDealer(false);
-      setShowDealerDialog(false);
     } catch (error) {
       console.error('Error submitting dealer form:', error);
       toast.error('Failed to submit dealer form');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleDeleteDealer = (id: number) => {
-    if (window.confirm('Are you sure you want to delete this dealer?')) {
-      deleteDealerMutation.mutate(id);
+  const handleDeleteDealer = (dealer: Dealer) => {
+    if (dealer.id && window.confirm('Are you sure you want to delete this dealer?')) {
+      deleteDealerMutation.mutate(dealer.id);
     }
   };
 
