@@ -55,15 +55,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (data && data.app_roles) {
-        const roleName = data.app_roles.name;
+        // Safely access data properties
+        const roleData = data.app_roles;
+        const roleName = roleData.name;
         let rolePermissions: UserPermissions = {};
 
         try {
           // Handle both string and object formats for permissions
-          if (typeof data.app_roles.permissions === 'string') {
-            rolePermissions = JSON.parse(data.app_roles.permissions);
+          if (typeof roleData.permissions === 'string') {
+            rolePermissions = JSON.parse(roleData.permissions);
           } else {
-            rolePermissions = data.app_roles.permissions;
+            rolePermissions = roleData.permissions;
           }
         } catch (e) {
           console.error('Error parsing permissions:', e);
