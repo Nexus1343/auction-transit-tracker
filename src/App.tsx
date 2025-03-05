@@ -14,6 +14,7 @@ import RegisterPage from './pages/auth/RegisterPage'
 import { Toaster } from './components/ui/toaster'
 import { AuthProvider } from './contexts/AuthContext'
 import ProtectedRoute from './components/auth/ProtectedRoute'
+import RoleBasedRoute from './components/auth/RoleBasedRoute'
 import './App.css'
 
 function App() {
@@ -28,12 +29,29 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<MainLayout />}>
             <Route index element={<Index />} />
-            <Route path="vehicles" element={<VehiclesPage />} />
-            <Route path="vehicles/:id" element={<VehicleDetailsPage />} />
-            <Route path="dealers" element={<DealersPage />} />
-            <Route path="pricing" element={<PricingPage />} />
-            <Route path="profile" element={<ProfilePage />} />
-            <Route path="profile/users" element={<UserManagementPage />} />
+            
+            {/* Routes accessible by all logged-in users */}
+            <Route element={<RoleBasedRoute resource="vehicles" requiredAction="read" />}>
+              <Route path="vehicles" element={<VehiclesPage />} />
+              <Route path="vehicles/:id" element={<VehicleDetailsPage />} />
+            </Route>
+            
+            <Route element={<RoleBasedRoute resource="profile" requiredAction="read" />}>
+              <Route path="profile" element={<ProfilePage />} />
+            </Route>
+            
+            {/* Admin-only routes */}
+            <Route element={<RoleBasedRoute resource="dealers" requiredAction="read" />}>
+              <Route path="dealers" element={<DealersPage />} />
+            </Route>
+            
+            <Route element={<RoleBasedRoute resource="pricing" requiredAction="read" />}>
+              <Route path="pricing" element={<PricingPage />} />
+            </Route>
+            
+            <Route element={<RoleBasedRoute resource="users" requiredAction="read" />}>
+              <Route path="profile/users" element={<UserManagementPage />} />
+            </Route>
           </Route>
         </Route>
         

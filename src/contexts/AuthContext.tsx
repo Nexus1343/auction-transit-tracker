@@ -5,13 +5,26 @@ import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 
+type UserPermission = {
+  read: boolean;
+  write: boolean;
+  delete?: boolean;
+};
+
+type UserPermissions = {
+  [resource: string]: UserPermission;
+};
+
 type AuthContextType = {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
+  userRole: string | null;
+  permissions: UserPermissions;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, name: string) => Promise<void>;
   signOut: () => Promise<void>;
+  hasPermission: (resource: string, action: 'read' | 'write' | 'delete') => boolean;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,14 +33,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [permissions, setPermissions] = useState<UserPermissions>({});
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const fetchUserRole = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_profile')
+        .select(`
+          role_id,
+          app_roles(id, name, permissions)
+        `)
+        .eq('auth_id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user role:', error);
+        return;
+      }
+
+      if (data && data.app_roles) {
+        setUserRole(data.app_roles.name);
+        setPermissions(data.app_roles.permissions || {});
+      }
+    } catch (error) {
+      console.error('Error in fetchUserRole:', error);
+    }
+  };
 
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user || null);
+      
+      if (session?.user) {
+        fetchUserRole(session.user.id);
+      }
+      
       setIsLoading(false);
     });
 
@@ -36,6 +81,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       (_event, session) => {
         setSession(session);
         setUser(session?.user || null);
+        
+        if (session?.user) {
+          fetchUserRole(session.user.id);
+        } else {
+          setUserRole(null);
+          setPermissions({});
+        }
+        
         setIsLoading(false);
       }
     );
@@ -110,8 +163,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const hasPermission = (resource: string, action: 'read' | 'write' | 'delete'): boolean => {
+    if (!permissions || !permissions[resource]) {
+      return false;
+    }
+    
+    return !!permissions[resource][action];
+  };
+
   return (
-    <AuthContext.Provider value={{ user, session, isLoading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      session, 
+      isLoading, 
+      userRole,
+      permissions,
+      signIn, 
+      signUp, 
+      signOut,
+      hasPermission
+    }}>
       {children}
     </AuthContext.Provider>
   );
