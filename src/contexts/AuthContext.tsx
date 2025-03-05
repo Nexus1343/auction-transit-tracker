@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Session, User } from '@supabase/supabase-js';
@@ -39,11 +40,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchUserRole = async (userId: string) => {
     try {
+      console.log('Fetching user role for user ID:', userId);
+      
       const { data, error } = await supabase
         .from('user_profile')
         .select(`
           role_id,
-          roles(id, name, permissions)
+          roles (
+            id, name, permissions
+          )
         `)
         .eq('auth_id', userId)
         .single();
@@ -53,18 +58,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
+      console.log('User profile data:', data);
+
       if (data && data.roles) {
         const roleData = data.roles;
         const roleName = roleData.name;
+        
+        console.log('Role data:', roleData);
+        console.log('Role name:', roleName);
+        console.log('Role permissions (raw):', roleData.permissions);
+        
         let rolePermissions: UserPermissions = {};
 
         try {
           if (typeof roleData.permissions === 'string') {
             const parsedPermissions = JSON.parse(roleData.permissions);
+            console.log('Parsed permissions:', parsedPermissions);
             if (parsedPermissions && typeof parsedPermissions === 'object' && !Array.isArray(parsedPermissions)) {
               rolePermissions = validatePermissionsObject(parsedPermissions);
             }
           } else if (roleData.permissions && typeof roleData.permissions === 'object' && !Array.isArray(roleData.permissions)) {
+            console.log('Object permissions:', roleData.permissions);
             rolePermissions = validatePermissionsObject(roleData.permissions);
           }
         } catch (e) {
@@ -72,8 +86,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           rolePermissions = {};
         }
 
+        console.log('Final processed permissions:', rolePermissions);
+        
         setUserRole(roleName);
         setPermissions(rolePermissions);
+      } else {
+        console.warn('No roles found for user', userId);
+        // Set default permissions - giving basic access to dashboard
+        setUserRole('User');
+        setPermissions({
+          '': { read: true, write: false, delete: false }
+        });
       }
     } catch (error) {
       console.error('Error in fetchUserRole:', error);
@@ -94,6 +117,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
       }
     });
+    
+    // Ensure at least dashboard access
+    if (!validatedPermissions['']) {
+      validatedPermissions[''] = { read: true, write: false, delete: false };
+    }
     
     return validatedPermissions;
   };
@@ -197,6 +225,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const hasPermission = (resource: string, action: 'read' | 'write' | 'delete'): boolean => {
+    console.log(`Checking permission for ${resource}:${action}`, { permissions });
+    
+    // If resource is empty (dashboard) and we're checking read permission
+    if (resource === '' && action === 'read') {
+      return true; // Always allow dashboard access
+    }
+    
+    // Special case: Admin role has all permissions
+    if (userRole === 'Admin') {
+      console.log('User is Admin, granting all permissions');
+      return true;
+    }
+    
+    // Check specific permission
     if (!permissions || !permissions[resource]) {
       return false;
     }
