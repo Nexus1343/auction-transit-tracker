@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, FormEvent } from 'react';
 import { 
   Plus, 
@@ -501,7 +502,7 @@ const DealersPage = () => {
                       <SelectItem value="">None</SelectItem>
                       {transportPrices.map(price => (
                         <SelectItem key={price.id} value={price.id.toString()}>
-                          {price.port || price.city} - ${price.price}
+                          {price.port || price.city || 'Unnamed'} - ${price.price || 0}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -522,7 +523,7 @@ const DealersPage = () => {
                       <SelectItem value="">None</SelectItem>
                       {containerPrices.map(price => (
                         <SelectItem key={price.id} value={price.id.toString()}>
-                          {price.port || price.vehicle_type} - ${price.price}
+                          {price.port || price.vehicle_type || 'Unnamed'} - ${price.price || 0}
                         </SelectItem>
                       ))}
                     </SelectContent>
