@@ -40,6 +40,9 @@ const DealersPage = () => {
       buyer_id: 'Atlantic',
       buyer_id_2: 'Atlantic',
       dealer_fee: 290.00,
+      dealer_fee_2: 350.00,
+      transport_price_id: 1,
+      container_price_id: 2,
       subDealers: []
     },
     {
@@ -51,6 +54,9 @@ const DealersPage = () => {
       buyer_id: 'Atlantic',
       buyer_id_2: 'Atlantic',
       dealer_fee: 390.00,
+      dealer_fee_2: 410.00,
+      transport_price_id: 3,
+      container_price_id: 1,
       subDealers: []
     },
     {
@@ -62,6 +68,9 @@ const DealersPage = () => {
       buyer_id: 'Atlantic',
       buyer_id_2: 'Atlantic',
       dealer_fee: 650.00,
+      dealer_fee_2: 700.00,
+      transport_price_id: 2,
+      container_price_id: 3,
       subDealers: [
         {
           id: 134,
@@ -77,6 +86,19 @@ const DealersPage = () => {
         }
       ]
     }
+  ];
+
+  // Sample data for dropdowns
+  const transportPrices = [
+    { id: 1, name: 'Standard Transport' },
+    { id: 2, name: 'Express Transport' },
+    { id: 3, name: 'Economy Transport' }
+  ];
+
+  const containerPrices = [
+    { id: 1, name: 'Standard Container' },
+    { id: 2, name: 'Large Container' },
+    { id: 3, name: 'Premium Container' }
   ];
 
   const renderHierarchyItem = (dealer: any, level = 0) => {
@@ -266,14 +288,14 @@ const DealersPage = () => {
 
       {/* Add/Edit Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>
               {selectedDealer ? 'Edit Dealer' : 'Add New Dealer'}
             </DialogTitle>
           </DialogHeader>
           
-          <div className="grid grid-cols-2 gap-4 mt-4">
+          <div className="grid grid-cols-2 gap-6 mt-4">
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -286,7 +308,7 @@ const DealersPage = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Username
+                  Username (Email)
                 </label>
                 <Input
                   type="text"
@@ -302,8 +324,6 @@ const DealersPage = () => {
                   defaultValue={selectedDealer?.password}
                 />
               </div>
-            </div>
-            <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Mobile
@@ -317,15 +337,21 @@ const DealersPage = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Buyer ID
                 </label>
-                <Select defaultValue={selectedDealer?.buyer_id || "Atlantic"}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select buyer ID" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Atlantic">Atlantic</SelectItem>
-                    <SelectItem value="Other">Other options...</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Input
+                  type="text"
+                  defaultValue={selectedDealer?.buyer_id}
+                />
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Buyer ID 2
+                </label>
+                <Input
+                  type="text"
+                  defaultValue={selectedDealer?.buyer_id_2}
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -333,8 +359,53 @@ const DealersPage = () => {
                 </label>
                 <Input
                   type="number"
+                  step="0.01"
                   defaultValue={selectedDealer?.dealer_fee}
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Dealer Fee 2
+                </label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  defaultValue={selectedDealer?.dealer_fee_2}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Transportation Price
+                </label>
+                <Select defaultValue={selectedDealer?.transport_price_id?.toString()}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select transportation price" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {transportPrices.map(price => (
+                      <SelectItem key={price.id} value={price.id.toString()}>
+                        {price.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Container Price
+                </label>
+                <Select defaultValue={selectedDealer?.container_price_id?.toString()}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select container price" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {containerPrices.map(price => (
+                      <SelectItem key={price.id} value={price.id.toString()}>
+                        {price.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
