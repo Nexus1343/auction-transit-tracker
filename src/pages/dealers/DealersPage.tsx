@@ -200,12 +200,19 @@ const DealersPage = () => {
         </div>
         {hasSubDealers && (
           <div className="border-l-2 border-gray-100 ml-3">
-            {dealer.subDealers.map((subDealer: SubDealer) => 
-              renderHierarchyItem({
+            {dealer.subDealers.map((subDealer: SubDealer) => {
+              // Convert SubDealer to Dealer with all required properties
+              const subDealerAsDealer: Dealer = {
                 ...subDealer,
+                buyer_id: null,
+                buyer_id_2: null,
+                dealer_fee_2: null,
+                transport_price_id: null,
+                container_price_id: null,
                 subDealers: []
-              }, level + 1)
-            )}
+              };
+              return renderHierarchyItem(subDealerAsDealer, level + 1);
+            })}
           </div>
         )}
       </div>
