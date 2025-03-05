@@ -1,11 +1,14 @@
+
 import React, { useState, useEffect, FormEvent } from 'react';
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 
 import { 
   Dealer, 
+  SubDealer,
   fetchDealers, 
-  addDealer, 
+  addDealer,
+  addSubDealer,
   updateDealer, 
   deleteDealer,
   fetchTransportPrices,
@@ -27,6 +30,7 @@ const DealersPage = () => {
   const [dealers, setDealers] = useState<Dealer[]>([]);
   const [transportPrices, setTransportPrices] = useState<any[]>([]);
   const [containerPrices, setContainerPrices] = useState<any[]>([]);
+  const [isSubDealer, setIsSubDealer] = useState(false);
   
   // Form state
   const [formData, setFormData] = useState<Dealer>({
@@ -39,7 +43,8 @@ const DealersPage = () => {
     dealer_fee: 0,
     dealer_fee_2: 0,
     transport_price_id: null,
-    container_price_id: null
+    container_price_id: null,
+    dealer_id: null
   });
 
   useEffect(() => {
@@ -49,6 +54,9 @@ const DealersPage = () => {
   useEffect(() => {
     // Reset form when selected dealer changes
     if (selectedDealer) {
+      const isSelectedSubDealer = !!selectedDealer.dealer_id;
+      setIsSubDealer(isSelectedSubDealer);
+      
       setFormData({
         id: selectedDealer.id,
         name: selectedDealer.name,
@@ -60,7 +68,8 @@ const DealersPage = () => {
         dealer_fee: selectedDealer.dealer_fee || 0,
         dealer_fee_2: selectedDealer.dealer_fee_2 || 0,
         transport_price_id: selectedDealer.transport_price_id,
-        container_price_id: selectedDealer.container_price_id
+        container_price_id: selectedDealer.container_price_id,
+        dealer_id: selectedDealer.dealer_id
       });
     } else {
       // Reset form for new dealer
@@ -74,8 +83,10 @@ const DealersPage = () => {
         dealer_fee: 0,
         dealer_fee_2: 0,
         transport_price_id: null,
-        container_price_id: null
+        container_price_id: null,
+        dealer_id: null
       });
+      setIsSubDealer(false);
     }
   }, [selectedDealer]);
 
@@ -115,6 +126,29 @@ const DealersPage = () => {
     }));
   };
 
+  const handleSwitchChange = (name: string, checked: boolean) => {
+    if (name === 'isSubDealer') {
+      setIsSubDealer(checked);
+      
+      // Reset sub-dealer specific fields when toggling
+      if (checked) {
+        setFormData(prev => ({
+          ...prev,
+          transport_price_id: null,
+          container_price_id: null,
+          buyer_id: '',
+          buyer_id_2: '',
+          dealer_fee_2: 0
+        }));
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          dealer_id: null
+        }));
+      }
+    }
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -124,8 +158,20 @@ const DealersPage = () => {
         // Update existing dealer
         await updateDealer(formData);
       } else {
-        // Add new dealer
-        await addDealer(formData);
+        // Add new dealer or sub-dealer
+        if (isSubDealer) {
+          const subDealerData: SubDealer = {
+            name: formData.name,
+            username: formData.username,
+            password: formData.password,
+            mobile: formData.mobile,
+            dealer_fee: formData.dealer_fee,
+            dealer_id: formData.dealer_id
+          };
+          await addSubDealer(subDealerData);
+        } else {
+          await addDealer(formData);
+        }
       }
       
       // Reload data after update
@@ -218,10 +264,13 @@ const DealersPage = () => {
         formData={formData}
         onInputChange={handleInputChange}
         onSelectChange={handleSelectChange}
+        onSwitchChange={handleSwitchChange}
         onSubmit={handleSubmit}
         isLoading={isLoading}
         transportPrices={transportPrices}
         containerPrices={containerPrices}
+        dealers={dealers}
+        isSubDealer={isSubDealer}
       />
     </div>
   );

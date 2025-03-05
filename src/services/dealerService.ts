@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -14,6 +15,7 @@ export interface Dealer {
   transport_price_id: number | null;
   container_price_id: number | null;
   subDealers?: SubDealer[];
+  dealer_id?: number | null;
 }
 
 export interface SubDealer {
@@ -76,6 +78,32 @@ export const addDealer = async (dealer: Dealer): Promise<Dealer | null> => {
   }
 };
 
+export const addSubDealer = async (subDealer: SubDealer): Promise<SubDealer | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('sub_dealers')
+      .insert({
+        name: subDealer.name,
+        username: subDealer.username,
+        password: subDealer.password,
+        mobile: subDealer.mobile,
+        dealer_fee: subDealer.dealer_fee || 0,
+        dealer_id: subDealer.dealer_id
+      })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    
+    toast.success('Sub-dealer added successfully');
+    return data;
+  } catch (error: any) {
+    console.error('Error adding sub-dealer:', error);
+    toast.error('Failed to add sub-dealer');
+    return null;
+  }
+};
+
 export const updateDealer = async (dealer: Dealer): Promise<Dealer | null> => {
   if (!dealer.id) {
     toast.error('Dealer ID is required for updating');
@@ -83,28 +111,52 @@ export const updateDealer = async (dealer: Dealer): Promise<Dealer | null> => {
   }
 
   try {
-    const { data, error } = await supabase
-      .from('dealers')
-      .update({
-        name: dealer.name,
-        username: dealer.username,
-        password: dealer.password,
-        mobile: dealer.mobile,
-        buyer_id: dealer.buyer_id,
-        buyer_id_2: dealer.buyer_id_2,
-        dealer_fee: dealer.dealer_fee || 0,
-        dealer_fee_2: dealer.dealer_fee_2 || 0,
-        transport_price_id: dealer.transport_price_id,
-        container_price_id: dealer.container_price_id
-      })
-      .eq('id', dealer.id)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    
-    toast.success('Dealer updated successfully');
-    return data;
+    // Check if this is a sub-dealer by checking dealer_id
+    if (dealer.dealer_id) {
+      // This is a sub-dealer, update in sub_dealers table
+      const { data, error } = await supabase
+        .from('sub_dealers')
+        .update({
+          name: dealer.name,
+          username: dealer.username,
+          password: dealer.password,
+          mobile: dealer.mobile,
+          dealer_fee: dealer.dealer_fee || 0,
+          dealer_id: dealer.dealer_id
+        })
+        .eq('id', dealer.id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      toast.success('Sub-dealer updated successfully');
+      return data;
+    } else {
+      // This is a regular dealer
+      const { data, error } = await supabase
+        .from('dealers')
+        .update({
+          name: dealer.name,
+          username: dealer.username,
+          password: dealer.password,
+          mobile: dealer.mobile,
+          buyer_id: dealer.buyer_id,
+          buyer_id_2: dealer.buyer_id_2,
+          dealer_fee: dealer.dealer_fee || 0,
+          dealer_fee_2: dealer.dealer_fee_2 || 0,
+          transport_price_id: dealer.transport_price_id,
+          container_price_id: dealer.container_price_id
+        })
+        .eq('id', dealer.id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      toast.success('Dealer updated successfully');
+      return data;
+    }
   } catch (error: any) {
     console.error('Error updating dealer:', error);
     toast.error('Failed to update dealer');

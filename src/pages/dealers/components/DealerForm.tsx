@@ -5,30 +5,71 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Dealer } from "../../../services/dealerService";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface DealerFormProps {
   formData: Dealer;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSelectChange: (name: string, value: string) => void;
+  onSwitchChange: (name: string, checked: boolean) => void;
   onSubmit: (e: FormEvent) => void;
   isLoading: boolean;
   onCancel: () => void;
   transportPrices: any[];
   containerPrices: any[];
+  dealers: Dealer[];
+  isSubDealer: boolean;
 }
 
 const DealerForm = ({
   formData,
   onInputChange,
   onSelectChange,
+  onSwitchChange,
   onSubmit,
   isLoading,
   onCancel,
   transportPrices,
-  containerPrices
+  containerPrices,
+  dealers,
+  isSubDealer
 }: DealerFormProps) => {
   return (
     <form onSubmit={onSubmit}>
+      <div className="flex items-center space-x-2 mb-4">
+        <Switch 
+          id="is-sub-dealer"
+          checked={isSubDealer}
+          onCheckedChange={(checked) => onSwitchChange('isSubDealer', checked)}
+        />
+        <Label htmlFor="is-sub-dealer">This is a sub-dealer</Label>
+      </div>
+
+      {isSubDealer && (
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Parent Dealer
+          </label>
+          <Select 
+            value={formData.dealer_id?.toString() || "none"}
+            onValueChange={(value) => onSelectChange('dealer_id', value === "none" ? "" : value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select parent dealer" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">None</SelectItem>
+              {dealers && dealers.map(dealer => (
+                <SelectItem key={dealer.id} value={dealer.id?.toString() || ""}>
+                  {dealer.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-6 mt-4">
         <div className="space-y-4">
           <div>
@@ -77,30 +118,48 @@ const DealerForm = ({
               onChange={onInputChange}
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Buyer ID
-            </label>
-            <Input
-              type="text"
-              name="buyer_id"
-              value={formData.buyer_id || ''}
-              onChange={onInputChange}
-            />
-          </div>
+          {!isSubDealer && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Buyer ID
+              </label>
+              <Input
+                type="text"
+                name="buyer_id"
+                value={formData.buyer_id || ''}
+                onChange={onInputChange}
+              />
+            </div>
+          )}
         </div>
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Buyer ID 2
-            </label>
-            <Input
-              type="text"
-              name="buyer_id_2"
-              value={formData.buyer_id_2 || ''}
-              onChange={onInputChange}
-            />
-          </div>
+          {!isSubDealer && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Buyer ID 2
+                </label>
+                <Input
+                  type="text"
+                  name="buyer_id_2"
+                  value={formData.buyer_id_2 || ''}
+                  onChange={onInputChange}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Dealer Fee 2
+                </label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  name="dealer_fee_2"
+                  value={formData.dealer_fee_2 || ''}
+                  onChange={onInputChange}
+                />
+              </div>
+            </>
+          )}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Dealer Fee
@@ -113,60 +172,52 @@ const DealerForm = ({
               onChange={onInputChange}
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Dealer Fee 2
-            </label>
-            <Input
-              type="number"
-              step="0.01"
-              name="dealer_fee_2"
-              value={formData.dealer_fee_2 || ''}
-              onChange={onInputChange}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Transportation Price
-            </label>
-            <Select 
-              value={formData.transport_price_id?.toString() || "none"}
-              onValueChange={(value) => onSelectChange('transport_price_id', value === "none" ? "" : value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select transportation price" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">None</SelectItem>
-                {transportPrices && transportPrices.map(price => (
-                  <SelectItem key={price.id} value={price.id.toString()}>
-                    {price.port || price.city || 'Unnamed'} - ${price.price || 0}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Container Price
-            </label>
-            <Select 
-              value={formData.container_price_id?.toString() || "none"}
-              onValueChange={(value) => onSelectChange('container_price_id', value === "none" ? "" : value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select container price" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">None</SelectItem>
-                {containerPrices && containerPrices.map(price => (
-                  <SelectItem key={price.id} value={price.id.toString()}>
-                    {price.port || price.vehicle_type || 'Unnamed'} - ${price.price || 0}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {!isSubDealer && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Transportation Price
+                </label>
+                <Select 
+                  value={formData.transport_price_id?.toString() || "none"}
+                  onValueChange={(value) => onSelectChange('transport_price_id', value === "none" ? "" : value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select transportation price" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {transportPrices && transportPrices.map(price => (
+                      <SelectItem key={price.id} value={price.id.toString()}>
+                        {price.port || price.city || 'Unnamed'} - ${price.price || 0}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Container Price
+                </label>
+                <Select 
+                  value={formData.container_price_id?.toString() || "none"}
+                  onValueChange={(value) => onSelectChange('container_price_id', value === "none" ? "" : value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select container price" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {containerPrices && containerPrices.map(price => (
+                      <SelectItem key={price.id} value={price.id.toString()}>
+                        {price.port || price.vehicle_type || 'Unnamed'} - ${price.price || 0}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          )}
         </div>
       </div>
 

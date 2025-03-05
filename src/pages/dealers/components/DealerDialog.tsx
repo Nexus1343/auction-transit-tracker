@@ -16,10 +16,13 @@ interface DealerDialogProps {
   formData: Dealer;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSelectChange: (name: string, value: string) => void;
+  onSwitchChange: (name: string, checked: boolean) => void;
   onSubmit: (e: React.FormEvent) => void;
   isLoading: boolean;
   transportPrices: any[];
   containerPrices: any[];
+  dealers: Dealer[];
+  isSubDealer: boolean;
 }
 
 const DealerDialog = ({
@@ -29,10 +32,13 @@ const DealerDialog = ({
   formData,
   onInputChange,
   onSelectChange,
+  onSwitchChange,
   onSubmit,
   isLoading,
   transportPrices,
-  containerPrices
+  containerPrices,
+  dealers,
+  isSubDealer
 }: DealerDialogProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -47,11 +53,14 @@ const DealerDialog = ({
           formData={formData}
           onInputChange={onInputChange}
           onSelectChange={onSelectChange}
+          onSwitchChange={onSwitchChange}
           onSubmit={onSubmit}
           isLoading={isLoading}
           onCancel={() => onOpenChange(false)}
           transportPrices={transportPrices}
           containerPrices={containerPrices}
+          dealers={dealers}
+          isSubDealer={isSubDealer}
         />
       </DialogContent>
     </Dialog>
