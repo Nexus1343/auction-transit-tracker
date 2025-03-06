@@ -349,6 +349,33 @@ export type Database = {
           },
         ]
       }
+      permissions: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string | null
+          id: number
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       ports: {
         Row: {
           country: string
@@ -372,6 +399,42 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      role_permissions: {
+        Row: {
+          created_at: string | null
+          id: number
+          permission_id: number
+          role_id: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          permission_id: number
+          role_id: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          permission_id?: number
+          role_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_permissions_permission_id_fkey"
+            columns: ["permission_id"]
+            isOneToOne: false
+            referencedRelation: "permissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "role_permissions_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       roles: {
         Row: {
@@ -633,38 +696,87 @@ export type Database = {
         }
         Relationships: []
       }
+      user_permissions: {
+        Row: {
+          created_at: string | null
+          id: number
+          permission_id: number
+          user_id: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          permission_id: number
+          user_id: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          permission_id?: number
+          user_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_permissions_permission_id_fkey"
+            columns: ["permission_id"]
+            isOneToOne: false
+            referencedRelation: "permissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_permissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_profile: {
         Row: {
           auth_id: string | null
           created_at: string | null
+          dealer_id: number | null
           email: string
           id: number
           mobile: string | null
           name: string
           role_id: number | null
+          status: string | null
           updated_at: string | null
         }
         Insert: {
           auth_id?: string | null
           created_at?: string | null
+          dealer_id?: number | null
           email: string
           id?: number
           mobile?: string | null
           name: string
           role_id?: number | null
+          status?: string | null
           updated_at?: string | null
         }
         Update: {
           auth_id?: string | null
           created_at?: string | null
+          dealer_id?: number | null
           email?: string
           id?: number
           mobile?: string | null
           name?: string
           role_id?: number | null
+          status?: string | null
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "user_profile_dealer_id_fkey"
+            columns: ["dealer_id"]
+            isOneToOne: false
+            referencedRelation: "dealers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "users_role_id_fkey"
             columns: ["role_id"]

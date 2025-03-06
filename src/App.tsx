@@ -7,6 +7,7 @@ import VehiclesPage from './pages/vehicles/VehiclesPage'
 import VehicleDetailsPage from './pages/vehicles/VehicleDetailsPage'
 import DealersPage from './pages/dealers/DealersPage'
 import PricingPage from './pages/pricing/PricingPage'
+import UsersPage from './pages/users/UsersPage'
 import ProfilePage from './pages/profile/ProfilePage'
 import LoginPage from './pages/auth/LoginPage'
 import RegisterPage from './pages/auth/RegisterPage'
@@ -30,6 +31,7 @@ function App() {
             <Route path="vehicles" element={<VehiclesPage />} />
             <Route path="vehicles/:id" element={<VehicleDetailsPage />} />
             <Route path="dealers" element={<DealersPage />} />
+            <Route path="users" element={<UsersPage />} />
             <Route path="pricing" element={<PricingPage />} />
             <Route path="profile" element={<ProfilePage />} />
           </Route>
