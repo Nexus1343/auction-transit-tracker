@@ -1,20 +1,52 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { User, Role, Permission, UserPermission, RolePermission } from "./types";
 import { toast } from "sonner";
+import { User, Role, Permission } from "./types";
 
 export const fetchUsers = async (): Promise<User[]> => {
   try {
     const { data, error } = await supabase
-      .from('user_profile')
+      .from('users')
       .select(`
-        *,
-        role:role_id(id, name, permissions)
-      `)
-      .order('name', { ascending: true });
-
+        id,
+        name,
+        email,
+        mobile,
+        role_id,
+        status,
+        auth_id,
+        dealer_id,
+        role:roles(
+          id,
+          name,
+          permissions
+        )
+      `);
+    
     if (error) throw error;
-    return data || [];
+    
+    // Transform the data to match the User type
+    const users: User[] = data.map(user => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      mobile: user.mobile,
+      role_id: user.role_id,
+      status: user.status,
+      auth_id: user.auth_id,
+      dealer_id: user.dealer_id,
+      role: user.role ? {
+        id: user.role.id,
+        name: user.role.name,
+        permissions: Array.isArray(user.role.permissions) 
+          ? user.role.permissions 
+          : typeof user.role.permissions === 'string'
+            ? JSON.parse(user.role.permissions)
+            : []
+      } : undefined
+    }));
+    
+    return users;
   } catch (error: any) {
     console.error('Error fetching users:', error);
     toast.error('Failed to fetch users');
@@ -22,19 +54,52 @@ export const fetchUsers = async (): Promise<User[]> => {
   }
 };
 
-export const fetchUser = async (id: number): Promise<User | null> => {
+export const fetchUserById = async (id: number): Promise<User | null> => {
   try {
     const { data, error } = await supabase
-      .from('user_profile')
+      .from('users')
       .select(`
-        *,
-        role:role_id(id, name, permissions)
+        id,
+        name,
+        email,
+        mobile,
+        role_id,
+        status,
+        auth_id,
+        dealer_id,
+        role:roles(
+          id,
+          name,
+          permissions
+        )
       `)
       .eq('id', id)
       .single();
-
+    
     if (error) throw error;
-    return data;
+    
+    // Transform the data to match the User type
+    const user: User = {
+      id: data.id,
+      name: data.name,
+      email: data.email,
+      mobile: data.mobile,
+      role_id: data.role_id,
+      status: data.status,
+      auth_id: data.auth_id,
+      dealer_id: data.dealer_id,
+      role: data.role ? {
+        id: data.role.id,
+        name: data.role.name,
+        permissions: Array.isArray(data.role.permissions) 
+          ? data.role.permissions 
+          : typeof data.role.permissions === 'string'
+            ? JSON.parse(data.role.permissions)
+            : []
+      } : undefined
+    };
+    
+    return user;
   } catch (error: any) {
     console.error('Error fetching user:', error);
     toast.error('Failed to fetch user');
@@ -45,11 +110,20 @@ export const fetchUser = async (id: number): Promise<User | null> => {
 export const addUser = async (user: User): Promise<User | null> => {
   try {
     const { data, error } = await supabase
-      .from('user_profile')
-      .insert(user)
+      .from('users')
+      .insert([
+        {
+          name: user.name,
+          email: user.email,
+          mobile: user.mobile,
+          role_id: user.role_id,
+          status: user.status || 'active',
+          dealer_id: user.dealer_id
+        }
+      ])
       .select()
       .single();
-
+    
     if (error) throw error;
     
     toast.success('User added successfully');
@@ -62,19 +136,21 @@ export const addUser = async (user: User): Promise<User | null> => {
 };
 
 export const updateUser = async (user: User): Promise<User | null> => {
-  if (!user.id) {
-    toast.error('User ID is required for updating');
-    return null;
-  }
-
   try {
     const { data, error } = await supabase
-      .from('user_profile')
-      .update(user)
-      .eq('id', user.id)
+      .from('users')
+      .update({
+        name: user.name,
+        email: user.email,
+        mobile: user.mobile,
+        role_id: user.role_id,
+        status: user.status,
+        dealer_id: user.dealer_id
+      })
+      .eq('id', user.id || 0)
       .select()
       .single();
-
+    
     if (error) throw error;
     
     toast.success('User updated successfully');
@@ -89,10 +165,10 @@ export const updateUser = async (user: User): Promise<User | null> => {
 export const deleteUser = async (id: number): Promise<boolean> => {
   try {
     const { error } = await supabase
-      .from('user_profile')
+      .from('users')
       .delete()
       .eq('id', id);
-
+    
     if (error) throw error;
     
     toast.success('User deleted successfully');
@@ -108,11 +184,24 @@ export const fetchRoles = async (): Promise<Role[]> => {
   try {
     const { data, error } = await supabase
       .from('roles')
-      .select('*')
-      .order('id', { ascending: true });
-
+      .select('*');
+    
     if (error) throw error;
-    return data || [];
+    
+    // Transform the data to match the Role type
+    const roles: Role[] = data.map(role => ({
+      id: role.id,
+      name: role.name,
+      permissions: Array.isArray(role.permissions) 
+        ? role.permissions 
+        : typeof role.permissions === 'string'
+          ? JSON.parse(role.permissions)
+          : [],
+      created_at: role.created_at,
+      updated_at: role.updated_at
+    }));
+    
+    return roles;
   } catch (error: any) {
     console.error('Error fetching roles:', error);
     toast.error('Failed to fetch roles');
@@ -124,88 +213,14 @@ export const fetchPermissions = async (): Promise<Permission[]> => {
   try {
     const { data, error } = await supabase
       .from('permissions')
-      .select('*')
-      .order('category', { ascending: true });
-
+      .select('*');
+    
     if (error) throw error;
-    return data || [];
+    
+    return data;
   } catch (error: any) {
     console.error('Error fetching permissions:', error);
     toast.error('Failed to fetch permissions');
     return [];
-  }
-};
-
-export const fetchUserPermissions = async (userId: number): Promise<UserPermission[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('user_permissions')
-      .select(`
-        *,
-        permission:permission_id(*)
-      `)
-      .eq('user_id', userId);
-
-    if (error) throw error;
-    return data || [];
-  } catch (error: any) {
-    console.error('Error fetching user permissions:', error);
-    toast.error('Failed to fetch user permissions');
-    return [];
-  }
-};
-
-export const fetchRolePermissions = async (roleId: number): Promise<RolePermission[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('role_permissions')
-      .select(`
-        *,
-        permission:permission_id(*)
-      `)
-      .eq('role_id', roleId);
-
-    if (error) throw error;
-    return data || [];
-  } catch (error: any) {
-    console.error('Error fetching role permissions:', error);
-    toast.error('Failed to fetch role permissions');
-    return [];
-  }
-};
-
-export const updateUserPermissions = async (
-  userId: number, 
-  permissionIds: number[]
-): Promise<boolean> => {
-  try {
-    // First delete all existing permissions
-    const { error: deleteError } = await supabase
-      .from('user_permissions')
-      .delete()
-      .eq('user_id', userId);
-
-    if (deleteError) throw deleteError;
-
-    // Then insert the new permissions
-    if (permissionIds.length > 0) {
-      const permissionsToInsert = permissionIds.map(permissionId => ({
-        user_id: userId,
-        permission_id: permissionId
-      }));
-
-      const { error: insertError } = await supabase
-        .from('user_permissions')
-        .insert(permissionsToInsert);
-
-      if (insertError) throw insertError;
-    }
-    
-    toast.success('User permissions updated successfully');
-    return true;
-  } catch (error: any) {
-    console.error('Error updating user permissions:', error);
-    toast.error('Failed to update user permissions');
-    return false;
   }
 };
