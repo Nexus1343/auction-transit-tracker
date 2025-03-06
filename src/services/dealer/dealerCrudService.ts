@@ -39,7 +39,7 @@ export const addDealer = async (dealer: Dealer): Promise<Dealer | null> => {
   }
 };
 
-export const updateDealer = async (dealer: Dealer): Promise<Dealer | null> => {
+export const updateDealer = async (dealer: Dealer, syncUserEmail: boolean = false): Promise<Dealer | null> => {
   if (!dealer.id) {
     toast.error('Dealer ID is required for updating');
     return null;
@@ -65,6 +65,33 @@ export const updateDealer = async (dealer: Dealer): Promise<Dealer | null> => {
       .single();
     
     if (error) throw error;
+    
+    // If syncUserEmail is true, we need to find and update the associated user
+    if (syncUserEmail && dealer.email) {
+      // First find if there's an associated user
+      const { data: userData, error: userFindError } = await supabase
+        .from('user_profile')
+        .select('id, email')
+        .eq('dealer_id', dealer.id)
+        .maybeSingle();
+      
+      if (userFindError) {
+        console.error('Error finding associated user:', userFindError);
+      } else if (userData && userData.id) {
+        // Update the user's email
+        const { error: userUpdateError } = await supabase
+          .from('user_profile')
+          .update({ email: dealer.email })
+          .eq('id', userData.id);
+        
+        if (userUpdateError) {
+          console.error('Error updating user email:', userUpdateError);
+          toast.error('Failed to sync user email');
+        } else {
+          toast.success('User email synchronized successfully');
+        }
+      }
+    }
     
     toast.success('Dealer updated successfully');
     if (data) {
@@ -93,6 +120,19 @@ export const deleteDealer = async (id: number): Promise<boolean> => {
     
     if (subDealers && subDealers.length > 0) {
       toast.error('Cannot delete dealer with sub-dealers');
+      return false;
+    }
+    
+    // Check if dealer has associated users
+    const { data: associatedUsers, error: userCheckError } = await supabase
+      .from('user_profile')
+      .select('id')
+      .eq('dealer_id', id);
+    
+    if (userCheckError) throw userCheckError;
+    
+    if (associatedUsers && associatedUsers.length > 0) {
+      toast.error('Cannot delete dealer with associated users');
       return false;
     }
     

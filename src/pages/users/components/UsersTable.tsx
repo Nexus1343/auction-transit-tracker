@@ -1,7 +1,17 @@
 
 import React from 'react';
-import { User } from "../../../services/user/types";
-import { formatDistanceToNow } from 'date-fns';
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Edit, Trash2, ShieldCheck, ShieldX, Store } from "lucide-react";
+import { User } from "../../../services/user";
+import { Badge } from "@/components/ui/badge";
 
 interface UsersTableProps {
   users: User[];
@@ -13,74 +23,97 @@ interface UsersTableProps {
 const UsersTable = ({ users, searchTerm, onEditUser, onDeleteUser }: UsersTableProps) => {
   // Filter users based on search term
   const filteredUsers = users.filter(user => {
-    const searchLower = searchTerm.toLowerCase();
+    const searchTermLower = searchTerm.toLowerCase();
     return (
-      user.name.toLowerCase().includes(searchLower) ||
-      user.email.toLowerCase().includes(searchLower) ||
-      (user.mobile && user.mobile.toLowerCase().includes(searchLower)) ||
-      (user.role?.name && user.role.name.toLowerCase().includes(searchLower))
+      user.name.toLowerCase().includes(searchTermLower) ||
+      user.email.toLowerCase().includes(searchTermLower) ||
+      (user.mobile && user.mobile.toLowerCase().includes(searchTermLower)) ||
+      (user.role?.name && user.role.name.toLowerCase().includes(searchTermLower))
     );
   });
+  
+  // Get status badge color
+  const getStatusBadge = (status: string) => {
+    switch(status) {
+      case 'active':
+        return <Badge className="bg-green-500">Active</Badge>;
+      case 'inactive':
+        return <Badge className="bg-gray-500">Inactive</Badge>;
+      case 'suspended':
+        return <Badge className="bg-red-500">Suspended</Badge>;
+      default:
+        return <Badge>{status}</Badge>;
+    }
+  };
 
   return (
-    <div className="relative overflow-x-auto">
-      <table className="w-full text-sm text-left rtl:text-right text-gray-500">
-        <thead className="text-xs text-gray-700 uppercase bg-gray-50">
-          <tr>
-            <th scope="col" className="px-6 py-3">Name</th>
-            <th scope="col" className="px-6 py-3">Email</th>
-            <th scope="col" className="px-6 py-3">Mobile</th>
-            <th scope="col" className="px-6 py-3">Role</th>
-            <th scope="col" className="px-6 py-3">Status</th>
-            <th scope="col" className="px-6 py-3">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>Email</TableHead>
+            <TableHead>Mobile</TableHead>
+            <TableHead>Role</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Association</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {filteredUsers.length === 0 ? (
-            <tr className="bg-white border-b">
-              <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+            <TableRow>
+              <TableCell colSpan={7} className="text-center py-4">
                 No users found
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           ) : (
             filteredUsers.map(user => (
-              <tr key={user.id} className="bg-white border-b hover:bg-gray-50">
-                <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
-                  {user.name}
-                </td>
-                <td className="px-6 py-4">{user.email}</td>
-                <td className="px-6 py-4">{user.mobile || '-'}</td>
-                <td className="px-6 py-4">{user.role?.name || '-'}</td>
-                <td className="px-6 py-4">
-                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                    user.status === 'active' 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
-                  }`}>
-                    {user.status || 'unknown'}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex space-x-2">
-                    <button
+              <TableRow key={user.id}>
+                <TableCell className="font-medium">{user.name}</TableCell>
+                <TableCell>{user.email}</TableCell>
+                <TableCell>{user.mobile || '-'}</TableCell>
+                <TableCell>
+                  {user.role?.name || '-'}
+                </TableCell>
+                <TableCell>
+                  {user.status ? getStatusBadge(user.status) : '-'}
+                </TableCell>
+                <TableCell>
+                  {user.dealer_id ? (
+                    <div className="flex items-center">
+                      <Store className="h-4 w-4 mr-1 text-blue-500" />
+                      <span>Dealer #{user.dealer_id}</span>
+                    </div>
+                  ) : user.role?.name === 'Dealer' ? (
+                    <Badge variant="outline">No Association</Badge>
+                  ) : (
+                    '-'
+                  )}
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => onEditUser(user)}
-                      className="font-medium text-blue-600 hover:underline"
                     >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => onDeleteUser(user.id || 0)}
-                      className="font-medium text-red-600 hover:underline"
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onDeleteUser(user.id as number)}
                     >
-                      Delete
-                    </button>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))
           )}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   );
 };

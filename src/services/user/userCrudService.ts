@@ -31,8 +31,33 @@ export const addUser = async (user: User): Promise<User | null> => {
   }
 };
 
-export const updateUser = async (user: User): Promise<User | null> => {
+export const updateUser = async (user: User, syncDealerEmail: boolean = false): Promise<User | null> => {
   try {
+    // First, check if the email is being updated and if there's a dealer association
+    if (syncDealerEmail && user.dealer_id && user.email) {
+      // Get the current user to check for email changes
+      const { data: currentUser, error: getUserError } = await supabase
+        .from('user_profile')
+        .select('email')
+        .eq('id', user.id || 0)
+        .single();
+      
+      if (!getUserError && currentUser && currentUser.email !== user.email) {
+        // Update the associated dealer's email
+        const { error: dealerUpdateError } = await supabase
+          .from('dealers')
+          .update({ email: user.email })
+          .eq('id', user.dealer_id);
+        
+        if (dealerUpdateError) {
+          console.error('Error updating dealer email:', dealerUpdateError);
+          toast.error('Failed to sync dealer email');
+        } else {
+          toast.success('Dealer email synchronized successfully');
+        }
+      }
+    }
+    
     const { data, error } = await supabase
       .from('user_profile')
       .update({

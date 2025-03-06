@@ -44,9 +44,14 @@ const UserDialog = ({
     enabled: !!selectedUser?.id && isOpen
   });
 
+  // Set the dialog width based on whether we're creating a dealer user
+  const getDialogWidth = () => {
+    return "max-w-4xl";
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className={getDialogWidth()}>
         <DialogHeader>
           <DialogTitle>
             {selectedUser ? 'Edit User' : 'Add New User'}
