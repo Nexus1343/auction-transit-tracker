@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { Dealer, SubDealer } from "../../../services/dealer";
@@ -11,11 +12,11 @@ interface HierarchyViewProps {
 const HierarchyView = ({ dealers, searchTerm, onSelectDealer }: HierarchyViewProps) => {
   const filteredDealers = dealers.filter(dealer => 
     dealer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (dealer.username && dealer.username.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (dealer.email && dealer.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
     // Also include dealers if any of their sub-dealers match search
     (dealer.subDealers && dealer.subDealers.some(subDealer => 
       subDealer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (subDealer.username && subDealer.username.toLowerCase().includes(searchTerm.toLowerCase()))
+      (subDealer.email && subDealer.email.toLowerCase().includes(searchTerm.toLowerCase()))
     ))
   );
 
@@ -38,7 +39,7 @@ const HierarchyView = ({ dealers, searchTerm, onSelectDealer }: HierarchyViewPro
           )}
           <div className="flex-1">
             <div className="font-medium">{dealer.name}</div>
-            <div className="text-sm text-gray-500">{dealer.username}</div>
+            <div className="text-sm text-gray-500">{dealer.email}</div>
           </div>
           <div className="text-sm text-gray-500">
             ${dealer.dealer_fee ? dealer.dealer_fee.toFixed(2) : '0.00'}

@@ -17,15 +17,20 @@ export const fetchDealers = async (): Promise<Dealer[]> => {
         dealer_fee, 
         dealer_fee_2, 
         transport_price_id, 
-        container_price_id,
-        dealer_id
+        container_price_id
       `)
       .is('dealer_id', null);
     
     if (error) throw error;
     
+    // Add username field to dealers (using email as fallback)
+    const dealersWithUsername = data?.map(dealer => ({
+      ...dealer,
+      username: dealer.email || null,
+    })) || [];
+    
     // Fetch sub-dealers
-    for (let dealer of data || []) {
+    for (let dealer of dealersWithUsername) {
       const { data: subDealers, error: subDealerError } = await supabase
         .from('sub_dealers')
         .select(`
@@ -41,10 +46,14 @@ export const fetchDealers = async (): Promise<Dealer[]> => {
       
       if (subDealerError) throw subDealerError;
       
-      dealer.subDealers = subDealers || [];
+      // Add username field to sub-dealers
+      dealer.subDealers = (subDealers || []).map(subDealer => ({
+        ...subDealer,
+        username: subDealer.email || null,
+      }));
     }
     
-    return data || [];
+    return dealersWithUsername;
   } catch (error: any) {
     console.error('Error fetching dealers:', error);
     toast.error('Failed to fetch dealers');
@@ -55,7 +64,33 @@ export const fetchDealers = async (): Promise<Dealer[]> => {
 export const fetchAllDealers = async (): Promise<Dealer[]> => {
   try {
     // Fetch main dealers
-    const { data: mainDealers, error: mainDealerError } = await supabase
+    const { data: mainDealersData, error: mainDealerError } = await supabase
+      .from('dealers')
+      .select(`
+        id, 
+        name, 
+        email, 
+        password, 
+        mobile, 
+        buyer_id, 
+        buyer_id_2, 
+        dealer_fee, 
+        dealer_fee_2, 
+        transport_price_id, 
+        container_price_id
+      `)
+      .is('dealer_id', null);
+    
+    if (mainDealerError) throw mainDealerError;
+    
+    // Add username field to dealers (using email as fallback)
+    const mainDealers = (mainDealersData || []).map(dealer => ({
+      ...dealer,
+      username: dealer.email || null,
+    }));
+    
+    // Fetch sub-dealers
+    const { data: subDealersData, error: subDealerError } = await supabase
       .from('dealers')
       .select(`
         id, 
@@ -71,38 +106,28 @@ export const fetchAllDealers = async (): Promise<Dealer[]> => {
         container_price_id,
         dealer_id
       `)
-      .is('dealer_id', null);
-    
-    if (mainDealerError) throw mainDealerError;
-    
-    // Fetch sub-dealers
-    const { data: subDealers, error: subDealerError } = await supabase
-      .from('dealers')
-      .select(`
-        id, 
-        name, 
-        email, 
-        password, 
-        mobile, 
-        buyer_id, 
-        buyer_id_2, 
-        dealer_fee, 
-        dealer_fee_2, 
-        transport_price_id, 
-        container_price_id,
-        dealer_id,
-        parent:dealers!dealers_dealer_id_fkey(name, id)
-      `)
       .not('dealer_id', 'is', null);
     
     if (subDealerError) throw subDealerError;
     
-    // Transform sub-dealers
-    const transformedSubDealers = subDealers.map(subDealer => ({
-      ...subDealer,
-      parentDealerName: subDealer.parent?.name || '',
-      parentDealerId: subDealer.parent?.id || 0
-    }));
+    // Transform sub-dealers with parent dealer data
+    const transformedSubDealers: Dealer[] = [];
+    
+    for (const subDealer of subDealersData || []) {
+      // Fetch parent dealer
+      const { data: parentDealer } = await supabase
+        .from('dealers')
+        .select('id, name')
+        .eq('id', subDealer.dealer_id)
+        .single();
+      
+      transformedSubDealers.push({
+        ...subDealer,
+        username: subDealer.email || null,
+        parentDealerName: parentDealer?.name || '',
+        parentDealerId: parentDealer?.id || 0
+      });
+    }
     
     // Combine main dealers and sub-dealers
     return [...mainDealers, ...transformedSubDealers];

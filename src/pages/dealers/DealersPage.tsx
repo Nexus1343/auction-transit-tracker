@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, FormEvent } from 'react';
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
@@ -32,11 +31,11 @@ const DealersPage = () => {
   
   const [formData, setFormData] = useState<Dealer>({
     name: '',
-    username: '',
-    password: '',
-    mobile: '',
-    buyer_id: '',
-    buyer_id_2: '',
+    email: null,
+    password: null,
+    mobile: null,
+    buyer_id: null,
+    buyer_id_2: null,
     dealer_fee: 0,
     dealer_fee_2: 0,
     transport_price_id: null,
@@ -44,7 +43,6 @@ const DealersPage = () => {
     dealer_id: null
   });
 
-  // Fetch dealers using React Query
   const { 
     data: dealers = [], 
     isLoading: isDealersLoading,
@@ -54,7 +52,6 @@ const DealersPage = () => {
     queryFn: fetchDealers
   });
 
-  // Fetch transport prices using React Query
   const { 
     data: transportPrices = []
   } = useQuery({
@@ -62,7 +59,6 @@ const DealersPage = () => {
     queryFn: fetchTransportPrices
   });
 
-  // Fetch container prices using React Query
   const { 
     data: containerPrices = []
   } = useQuery({
@@ -70,7 +66,6 @@ const DealersPage = () => {
     queryFn: fetchContainerPrices
   });
 
-  // Mutation for adding a dealer
   const addDealerMutation = useMutation({
     mutationFn: (dealer: Dealer) => isSubDealer ? addSubDealer(dealer as SubDealer) : addDealer(dealer),
     onSuccess: () => {
@@ -84,7 +79,6 @@ const DealersPage = () => {
     }
   });
 
-  // Mutation for updating a dealer
   const updateDealerMutation = useMutation({
     mutationFn: updateDealer,
     onSuccess: () => {
@@ -98,7 +92,6 @@ const DealersPage = () => {
     }
   });
 
-  // Mutation for deleting a dealer
   const deleteDealerMutation = useMutation({
     mutationFn: deleteDealer,
     onSuccess: () => {
@@ -119,11 +112,11 @@ const DealersPage = () => {
       setFormData({
         id: selectedDealer.id,
         name: selectedDealer.name,
-        username: selectedDealer.username || '',
-        password: selectedDealer.password || '',
-        mobile: selectedDealer.mobile || '',
-        buyer_id: selectedDealer.buyer_id || '',
-        buyer_id_2: selectedDealer.buyer_id_2 || '',
+        email: selectedDealer.email,
+        password: selectedDealer.password,
+        mobile: selectedDealer.mobile,
+        buyer_id: selectedDealer.buyer_id,
+        buyer_id_2: selectedDealer.buyer_id_2,
         dealer_fee: selectedDealer.dealer_fee || 0,
         dealer_fee_2: selectedDealer.dealer_fee_2 || 0,
         transport_price_id: selectedDealer.transport_price_id,
@@ -133,11 +126,11 @@ const DealersPage = () => {
     } else {
       setFormData({
         name: '',
-        username: '',
-        password: '',
-        mobile: '',
-        buyer_id: '',
-        buyer_id_2: '',
+        email: null,
+        password: null,
+        mobile: null,
+        buyer_id: null,
+        buyer_id_2: null,
         dealer_fee: 0,
         dealer_fee_2: 0,
         transport_price_id: null,
@@ -194,7 +187,7 @@ const DealersPage = () => {
     } else {
       const subDealerData: SubDealer = {
         name: formData.name,
-        username: formData.username,
+        email: formData.email,
         password: formData.password,
         mobile: formData.mobile,
         dealer_fee: formData.dealer_fee,

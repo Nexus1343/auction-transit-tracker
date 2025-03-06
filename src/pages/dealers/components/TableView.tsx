@@ -15,7 +15,7 @@ const TableView = ({ dealers, searchTerm, onEditDealer, onDeleteDealer }: TableV
   // Get all top-level dealers
   const topLevelDealers = dealers.filter(dealer => 
     dealer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (dealer.username && dealer.username.toLowerCase().includes(searchTerm.toLowerCase()))
+    (dealer.email && dealer.email.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   // Create a flat array of all sub-dealers
@@ -23,7 +23,7 @@ const TableView = ({ dealers, searchTerm, onEditDealer, onDeleteDealer }: TableV
     if (dealer.subDealers && dealer.subDealers.length > 0) {
       const filteredSubDealers = dealer.subDealers.filter(subDealer => 
         subDealer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (subDealer.username && subDealer.username.toLowerCase().includes(searchTerm.toLowerCase()))
+        (subDealer.email && subDealer.email.toLowerCase().includes(searchTerm.toLowerCase()))
       );
       
       // Convert sub-dealers to dealers for consistent rendering, but add parent dealer info
@@ -51,7 +51,7 @@ const TableView = ({ dealers, searchTerm, onEditDealer, onDeleteDealer }: TableV
       <thead>
         <tr className="border-b">
           <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">Name</th>
-          <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">Username</th>
+          <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">Email</th>
           <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">Mobile</th>
           <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">Buyer ID</th>
           <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">Dealer Fee</th>
@@ -76,13 +76,13 @@ const TableView = ({ dealers, searchTerm, onEditDealer, onDeleteDealer }: TableV
                 
                 {!dealer.dealer_id && hasSubDealers && (
                   <div className="text-sm text-gray-500">
-                    {dealer.subDealers.length} sub-dealers
+                    {dealer.subDealers!.length} sub-dealers
                   </div>
                 )}
               </td>
               <td className="px-4 py-3">
                 <div className="flex items-center space-x-2">
-                  <span className="text-gray-600">{dealer.username}</span>
+                  <span className="text-gray-600">{dealer.email}</span>
                   <button className="opacity-0 group-hover:opacity-100 transition-opacity">
                     <Copy className="w-4 h-4 text-gray-400 hover:text-gray-600" />
                   </button>
