@@ -15,7 +15,7 @@ export interface Dealer {
   dealer_id?: number | null;
   parentDealerName?: string;
   parentDealerId?: number;
-  username?: string | null; // Added username property
+  username?: string | null;
 }
 
 export interface SubDealer {
@@ -26,5 +26,5 @@ export interface SubDealer {
   mobile: string | null;
   dealer_fee: number | null;
   dealer_id?: number | null;
-  username?: string | null; // Added username property
+  username?: string | null;
 }
