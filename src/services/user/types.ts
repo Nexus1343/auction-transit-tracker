@@ -3,20 +3,18 @@ export interface User {
   id?: number;
   name: string;
   email: string;
-  mobile: string | null;
+  mobile?: string | null;
   role_id: number | null;
   role?: Role;
-  status: string;
-  dealer_id?: number | null;
+  status?: string;
   auth_id?: string | null;
-  created_at?: string;
-  updated_at?: string;
+  dealer_id?: number | null;
 }
 
 export interface Role {
   id: number;
   name: string;
-  permissions: any;
+  permissions: string[];
   created_at?: string;
   updated_at?: string;
 }
@@ -24,10 +22,9 @@ export interface Role {
 export interface Permission {
   id: number;
   name: string;
-  description: string | null;
   category: string;
+  description?: string;
   created_at?: string;
-  updated_at?: string;
 }
 
 export interface UserPermission {

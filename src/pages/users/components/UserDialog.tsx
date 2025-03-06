@@ -5,6 +5,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription
 } from "@/components/ui/dialog";
 import UserForm from './UserForm';
 import PermissionsForm from './PermissionsForm';
@@ -50,6 +51,9 @@ const UserDialog = ({
           <DialogTitle>
             {selectedUser ? 'Edit User' : 'Add New User'}
           </DialogTitle>
+          <DialogDescription>
+            {selectedUser ? 'Update user details and permissions' : 'Create a new user account'}
+          </DialogDescription>
         </DialogHeader>
         
         {selectedUser && (
