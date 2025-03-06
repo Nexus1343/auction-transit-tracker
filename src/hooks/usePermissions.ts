@@ -1,7 +1,55 @@
 
 import { useEffect, useState } from 'react';
-import { fetchPermissions, fetchRolePermissions, fetchUserPermissions } from '@/services/user/userService';
+import { supabase } from '@/integrations/supabase/client';
 import { Permission, UserPermission, RolePermission } from '@/services/user/types';
+
+// Fetch all permissions
+export const fetchPermissions = async (): Promise<Permission[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('permissions')
+      .select('*')
+      .order('category', { ascending: true });
+    
+    if (error) throw error;
+    return data || [];
+  } catch (error: any) {
+    console.error('Error fetching permissions:', error);
+    return [];
+  }
+};
+
+// Fetch user permissions
+export const fetchUserPermissions = async (userId: number): Promise<UserPermission[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('user_permissions')
+      .select('*')
+      .eq('user_id', userId);
+    
+    if (error) throw error;
+    return data || [];
+  } catch (error: any) {
+    console.error('Error fetching user permissions:', error);
+    return [];
+  }
+};
+
+// Fetch role permissions
+export const fetchRolePermissions = async (roleId: number): Promise<RolePermission[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('role_permissions')
+      .select('*')
+      .eq('role_id', roleId);
+    
+    if (error) throw error;
+    return data || [];
+  } catch (error: any) {
+    console.error('Error fetching role permissions:', error);
+    return [];
+  }
+};
 
 export const usePermissions = (userId?: number, roleId?: number) => {
   const [allPermissions, setAllPermissions] = useState<Permission[]>([]);
