@@ -86,7 +86,7 @@ const UserForm = ({ selectedUser, onSuccess, isLoading }: UserFormProps) => {
   };
 
   const handleRoleChange = (value: string) => {
-    const roleId = value === '' ? null : parseInt(value);
+    const roleId = value === 'none' ? null : parseInt(value);
     setFormData(prev => ({ ...prev, role_id: roleId }));
     
     // Check if selected role is dealer
@@ -100,7 +100,7 @@ const UserForm = ({ selectedUser, onSuccess, isLoading }: UserFormProps) => {
   };
 
   const handleDealerChange = (value: string) => {
-    const dealerId = value === '' ? null : parseInt(value);
+    const dealerId = value === 'none' ? null : parseInt(value);
     setFormData(prev => ({ ...prev, dealer_id: dealerId }));
   };
 
@@ -164,14 +164,14 @@ const UserForm = ({ selectedUser, onSuccess, isLoading }: UserFormProps) => {
           <div>
             <Label htmlFor="role">Role</Label>
             <Select
-              value={formData.role_id?.toString() || ''}
+              value={formData.role_id?.toString() || 'none'}
               onValueChange={handleRoleChange}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select a role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No Role</SelectItem>
+                <SelectItem value="none">No Role</SelectItem>
                 {roles.map(role => (
                   <SelectItem key={role.id} value={role.id.toString()}>
                     {role.name}
@@ -202,14 +202,14 @@ const UserForm = ({ selectedUser, onSuccess, isLoading }: UserFormProps) => {
             <div>
               <Label htmlFor="dealer">Associated Dealer</Label>
               <Select
-                value={formData.dealer_id?.toString() || ''}
+                value={formData.dealer_id?.toString() || 'none'}
                 onValueChange={handleDealerChange}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a dealer" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No Dealer</SelectItem>
+                  <SelectItem value="none">No Dealer</SelectItem>
                   {dealers.map(dealer => (
                     <SelectItem key={dealer.id} value={dealer.id?.toString() || ""}>
                       {dealer.name}
