@@ -26,16 +26,16 @@ const Navbar = () => {
   ]
 
   return (
-    <header className="bg-white border-b border-gray-200">
-      <div className="mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex">
-            <div className="flex-shrink-0 flex items-center">
-              <Link to="/" className="font-bold text-xl text-blue-600">
+    <header className="bg-white border-b border-gray-200 shadow-sm">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <Link to="/" className="font-bold text-xl text-blue-600 hover:text-blue-700 transition-colors">
                 AmeriCars
               </Link>
             </div>
-            <nav className="hidden md:ml-6 md:flex md:space-x-4">
+            <nav className="hidden md:ml-8 md:flex md:space-x-1">
               {navigation.map((item) => {
                 const isActive = location.pathname === item.href || 
                   (item.href !== '/' && location.pathname.startsWith(item.href));
@@ -43,10 +43,10 @@ const Navbar = () => {
                   <Link
                     key={item.name}
                     to={item.href}
-                    className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-md ${
+                    className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                       isActive
-                        ? 'text-blue-600 border-b-2 border-blue-600'
-                        : 'text-gray-600 hover:text-gray-900 hover:border-b-2 hover:border-gray-300'
+                        ? 'text-blue-600 bg-blue-50 border-b-2 border-blue-600'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                     }`}
                   >
                     {item.name}
@@ -63,8 +63,15 @@ const Navbar = () => {
                     <UserCircle className="h-6 w-6" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">{user.email}</p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        Signed in
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => navigate('/profile')}>
                     <Settings className="mr-2 h-4 w-4" />

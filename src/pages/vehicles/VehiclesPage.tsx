@@ -146,33 +146,37 @@ const VehiclesPage = () => {
   
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold tracking-tight">Vehicles</h1>
-        <Button onClick={() => setIsModalOpen(true)}>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Vehicles</h1>
+          <p className="text-sm text-gray-500 mt-1">Manage your vehicle inventory and track transportation status</p>
+        </div>
+        <Button onClick={() => setIsModalOpen(true)} className="w-full sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
           Add Vehicle
         </Button>
       </div>
       
       {/* Status Filters */}
-      <Card className="shadow-sm">
+      <Card className="shadow-sm border-0 bg-white">
         <CardContent className="p-6">
-          <div className="space-y-4">
+          <div className="space-y-6">
             {/* Land Transportation Filters */}
             <div>
-              <div className="flex items-center mb-2">
-                <Truck className="w-5 h-5 text-gray-500 mr-2" />
-                <h3 className="text-md font-semibold text-gray-700">Land Transportation</h3>
+              <div className="flex items-center mb-3">
+                <Truck className="w-5 h-5 text-blue-600 mr-2" />
+                <h3 className="text-md font-semibold text-gray-900">Land Transportation</h3>
               </div>
               <div className="flex flex-wrap gap-2">
                 {transportStatuses.land.map((status) => (
                   <button
                     key={status}
                     onClick={() => toggleFilter(status)}
-                    className={`px-3 py-1 text-sm font-medium rounded-full transition-colors ${
+                    className={`px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
                       activeFilters.includes(status)
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                        ? 'bg-blue-100 text-blue-800 border border-blue-200 shadow-sm'
+                        : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
                     }`}
                   >
                     {status}
@@ -183,19 +187,19 @@ const VehiclesPage = () => {
 
             {/* Sea Transportation Filters */}
             <div>
-              <div className="flex items-center mb-2">
-                <Ship className="w-5 h-5 text-gray-500 mr-2" />
-                <h3 className="text-md font-semibold text-gray-700">Sea Transportation</h3>
+              <div className="flex items-center mb-3">
+                <Ship className="w-5 h-5 text-green-600 mr-2" />
+                <h3 className="text-md font-semibold text-gray-900">Sea Transportation</h3>
               </div>
               <div className="flex flex-wrap gap-2">
                 {transportStatuses.sea.map((status) => (
                   <button
                     key={status}
                     onClick={() => toggleFilter(status)}
-                    className={`px-3 py-1 text-sm font-medium rounded-full transition-colors ${
+                    className={`px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
                       activeFilters.includes(status)
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                        ? 'bg-green-100 text-green-800 border border-green-200 shadow-sm'
+                        : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
                     }`}
                   >
                     {status}
@@ -206,18 +210,18 @@ const VehiclesPage = () => {
 
             {/* Active Filters */}
             {activeFilters.length > 0 && (
-              <div className="flex items-center mt-4">
-                <span className="text-sm font-medium text-gray-500 mr-2">Active Filters:</span>
-                <div className="flex flex-wrap gap-2">
+              <div className="pt-4 border-t border-gray-100">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-medium text-gray-700">Active Filters:</span>
                   {activeFilters.map((filter) => (
                     <span 
                       key={filter} 
-                      className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium flex items-center"
+                      className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1"
                     >
                       {filter}
                       <button 
                         onClick={() => toggleFilter(filter)}
-                        className="ml-1 text-blue-600 hover:text-blue-800"
+                        className="text-blue-600 hover:text-blue-800 ml-1"
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -225,7 +229,7 @@ const VehiclesPage = () => {
                   ))}
                   <button 
                     onClick={clearFilters}
-                    className="text-xs text-gray-500 hover:text-gray-700 underline"
+                    className="text-xs text-gray-500 hover:text-gray-700 underline ml-2"
                   >
                     Clear all
                   </button>
@@ -236,9 +240,10 @@ const VehiclesPage = () => {
         </CardContent>
       </Card>
       
-      <Card>
-        <div className="p-4 border-b flex items-center justify-between">
-          <CardTitle>Vehicle Inventory</CardTitle>
+      {/* Vehicle Inventory Table */}
+      <Card className="shadow-sm border-0 bg-white">
+        <div className="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <CardTitle className="text-lg font-semibold text-gray-900">Vehicle Inventory</CardTitle>
           <div className="flex items-center space-x-2">
             <div className="relative">
               <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
@@ -247,54 +252,61 @@ const VehiclesPage = () => {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search vehicles..."
-                className="pl-9 pr-4 w-64"
+                className="pl-9 pr-4 w-64 h-10"
               />
             </div>
-            <Button variant="outline" size="icon" className="h-10 w-10" onClick={() => fetchVehicles()}>
+            <Button variant="outline" size="sm" onClick={() => fetchVehicles()} className="h-10">
               <RotateCw className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="icon" className="h-10 w-10">
+            <Button variant="outline" size="sm" className="h-10">
               <Filter className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="icon" className="h-10 w-10">
+            <Button variant="outline" size="sm" className="h-10">
               <Download className="h-4 w-4" />
             </Button>
           </div>
         </div>
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="text-center py-6">Loading vehicles...</div>
+            <div className="text-center py-12 text-gray-500">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              Loading vehicles...
+            </div>
           ) : filteredVehicles.length === 0 ? (
-            <div className="text-center py-10 text-gray-500">
-              No vehicles match your criteria. Try adjusting your filters or search term.
+            <div className="text-center py-12 text-gray-500">
+              <div className="mb-4">
+                <Truck className="h-12 w-12 text-gray-300 mx-auto" />
+              </div>
+              <p className="text-lg font-medium">No vehicles found</p>
+              <p className="text-sm">Try adjusting your filters or search term.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
+              <table className="w-full">
                 <thead>
-                  <tr className="bg-muted border-b">
-                    <th className="text-left py-3 px-4 font-medium">VIN</th>
-                    <th className="text-left py-3 px-4 font-medium">Lot Number</th>
-                    <th className="text-left py-3 px-4 font-medium">Manufacturer</th>
-                    <th className="text-left py-3 px-4 font-medium">Model</th>
-                    <th className="text-left py-3 px-4 font-medium">Year</th>
-                    <th className="text-left py-3 px-4 font-medium">Status</th>
+                  <tr className="bg-gray-50 border-b border-gray-100">
+                    <th className="text-left py-3 px-6 font-medium text-gray-900 text-sm">VIN</th>
+                    <th className="text-left py-3 px-6 font-medium text-gray-900 text-sm">Lot Number</th>
+                    <th className="text-left py-3 px-6 font-medium text-gray-900 text-sm">Manufacturer</th>
+                    <th className="text-left py-3 px-6 font-medium text-gray-900 text-sm">Model</th>
+                    <th className="text-left py-3 px-6 font-medium text-gray-900 text-sm">Year</th>
+                    <th className="text-left py-3 px-6 font-medium text-gray-900 text-sm">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredVehicles.map((vehicle) => (
                     <tr 
                       key={vehicle.id} 
-                      className="border-b hover:bg-muted/50 cursor-pointer" 
+                      className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors" 
                       onClick={() => handleRowClick(vehicle.id)}
                     >
-                      <td className="py-3 px-4 text-blue-600 font-medium">{vehicle.vin}</td>
-                      <td className="py-3 px-4">{vehicle.lot_number}</td>
-                      <td className="py-3 px-4">{vehicle.manufacturer?.name || "Unknown"}</td>
-                      <td className="py-3 px-4">{vehicle.model?.name || "Unknown"}</td>
-                      <td className="py-3 px-4">{vehicle.year}</td>
-                      <td className="py-3 px-4">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                      <td className="py-4 px-6 text-blue-600 font-medium text-sm hover:text-blue-800">{vehicle.vin}</td>
+                      <td className="py-4 px-6 text-gray-900 text-sm">{vehicle.lot_number}</td>
+                      <td className="py-4 px-6 text-gray-900 text-sm">{vehicle.manufacturer?.name || "Unknown"}</td>
+                      <td className="py-4 px-6 text-gray-900 text-sm">{vehicle.model?.name || "Unknown"}</td>
+                      <td className="py-4 px-6 text-gray-900 text-sm">{vehicle.year}</td>
+                      <td className="py-4 px-6">
+                        <span className={`px-3 py-1 text-xs font-medium rounded-full ${
                           transportStatuses.land.includes(vehicle.current_status || '')
                             ? 'bg-blue-100 text-blue-800'
                             : transportStatuses.sea.includes(vehicle.current_status || '')
