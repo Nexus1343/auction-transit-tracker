@@ -86,7 +86,7 @@ const VehicleDetailsPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 w-full">
       <VehicleHeader
         vehicle={vehicle}
         currentStatus={currentStatus}
@@ -97,7 +97,7 @@ const VehicleDetailsPage = () => {
         getProgressPercentage={getProgressPercentage}
       />
 
-      <div className="max-w-5xl mx-auto p-6 space-y-6">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <VehicleBasicInfo form={form} />
